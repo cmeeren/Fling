@@ -366,3 +366,12 @@ let getAllOrders connStr =
   }
 ```
 
+## Deployment checklist
+
+For maintainers.
+
+* Make necessary changes to the code
+* Update the changelog
+* Update the version in `Fling.fsproj`
+* Commit and push to `master`. If the GitHub build succeeds, the package is automatically published to NuGet.
+
