@@ -218,7 +218,7 @@ let tests =
             load () () |> Async.RunSynchronously |> ignore
             sw.Stop ()
 
-            Expect.isLessThan sw.ElapsedMilliseconds 1500L ""
+            Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
 
 
         ]
@@ -302,7 +302,7 @@ let tests =
             load () [()] |> Async.RunSynchronously |> ignore
             sw.Stop ()
 
-            Expect.isLessThan sw.ElapsedMilliseconds 1500L ""
+            Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
 
 
         ]
