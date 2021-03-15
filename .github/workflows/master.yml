@@ -1,0 +1,35 @@
+name: master
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Install .NET SDK 5.0.103
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.103
+
+    - name: Restore
+      run: dotnet restore --locked-mode
+
+    - name: Build
+      run: dotnet build --no-restore -c Release
+
+    - name: Test
+      run: dotnet test --no-build -c Release
+
+    - name: Publish NuGet
+      uses: brandedoutcast/publish-nuget@v2.5.5
+      with:
+        PROJECT_FILE_PATH: "src/Fling/Fling.fsproj"
+        PACKAGE_NAME: "Fling"
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}

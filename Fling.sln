@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fling", "src\Fling\Fling.fsproj", "{D992BA6A-04CB-4231-8F6D-8BCB87EF718F}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fling.Tests", "src\Fling.Tests\Fling.Tests.fsproj", "{B77F4A0A-43FB-44DE-9D87-F5BF04641207}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{226C36F4-B3BD-4DFB-8DEE-31B7999B3B95}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D992BA6A-04CB-4231-8F6D-8BCB87EF718F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D992BA6A-04CB-4231-8F6D-8BCB87EF718F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D992BA6A-04CB-4231-8F6D-8BCB87EF718F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D992BA6A-04CB-4231-8F6D-8BCB87EF718F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B77F4A0A-43FB-44DE-9D87-F5BF04641207}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B77F4A0A-43FB-44DE-9D87-F5BF04641207}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B77F4A0A-43FB-44DE-9D87-F5BF04641207}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B77F4A0A-43FB-44DE-9D87-F5BF04641207}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F42E8740-1DC7-433A-84CE-71C3C412E77C}
+	EndGlobalSection
+EndGlobal
