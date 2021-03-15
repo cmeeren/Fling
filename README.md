@@ -18,6 +18,8 @@ What does it look like?
 Given data access code, DTO types and functions to convert between domain and DTO types, Fling allows you to write these three helpers for efficiently saving/loading complex domain entities as described above:
 
 ```f#
+open Fling.Fling
+
 // 'Order option' is the old order (None for initial insert)
 let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
   saveRoot orderToDbDto insertOrder updateOrder
@@ -272,6 +274,8 @@ Fling now allows you to wire everything together using a declarative syntax.
 Given a single root DTO, the function below loads all child entities in parallel and calls your DTO-to-domain function to return the root entity.
 
 ```f#
+open Fling.Fling
+
 let load : 'arg -> OrderDto -> Async<Order> =
   createLoader orderFromDto (fun dto -> dto.OrderId)
   |> loadChild getOrderLinesForOrder
@@ -288,6 +292,8 @@ Given multiple root DTOs, the function below loads all child entities for all th
 In all of the calls below, you specify a function to get the root ID given the child ID. Fling uses this to know which child entities belong to which roots.
 
 ```f#
+open Fling.Fling
+
 let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
   createBatchLoader orderFromDbDto (fun dto -> dto.OrderId)
   |> batchLoadChildren getOrderLinesForOrders (fun dto -> dto.OrderId)
@@ -308,6 +314,8 @@ Everything is done in the order specified here. For to-many child entities, all 
 For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of the DTO, which will be passed to the `delete` function if the entity needs to be deleted.
 
 ```f#
+open Fling.Fling
+
 let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
   saveRoot orderToDbDto insertOrder updateOrder
   |> saveChildren
