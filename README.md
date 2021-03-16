@@ -10,7 +10,7 @@ Fling works with your existing (simple, per-table) get/insert/update/delete data
 
 Fling is completely database agnostic.
 
-If you use SQL Server, Fling synergizes well with [Facil](https://github.com/cmeeren/Facil), which can provide you with boilerplate-free, type-safe data access code that Fling can use. However, Fling is just as useful without it.
+If you use SQL Server, Fling synergizes very well with [Facil](https://github.com/cmeeren/Facil), which can fully generate the data access code that Fling can use. However, Fling is just as useful without it.
 
 What does it look like?
 -----------------------
@@ -94,7 +94,7 @@ type Order =
 
 ### 3. Write DTO types corresponding to the database tables
 
-[Facil](https://github.com/cmeeren/Facil) can do this for you.
+[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
 
 For demonstration purposes, we store the Order aggregate in five tables: One for the top-level order data, one for the order line data (each order can have 0..N lines), one for the associated users (0..N), one for the coupon used on the order (0..1), and one for the price data (1-to-1).
 
@@ -158,7 +158,7 @@ let orderFromDbDto
 
 ### 4. Write the individual get/insert/update/delete DB functions for each table
 
-[Facil](https://github.com/cmeeren/Facil) can help you with this.
+[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
 
 Note that all of these functions accept `'arg` as their first argument. This can be anything, but will typically be a connection string, a connection object, or tuple containing a connection and a transaction. (Just use `()` if you don’t need it.)
 
@@ -222,7 +222,7 @@ For saving, you need functions to insert/update the root DTO and all (non-option
 
 You can, if you want, use an “upsert” function instead of insert/update. If you do, just pass this function as both the insert and update function in the next step.
 
-The “insert root” and “update root” functions may return `Async<a>` (e.g. for returning a generated ID), and must both return the same type. All child entity insert/update/delete functions must return `Async<unit>`.
+The “insert root” and “update root” functions may return `Async<'a>` (e.g. for returning a generated ID), and must both return the same type. All child entity insert/update/delete functions must return `Async<unit>`.
 
 ```f#
 let insertOrder conn (dto: OrderDto) : Async<unit> =
@@ -303,7 +303,7 @@ let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
   |> runBatchLoader
 ```
 
-### Helper to save a root entity and all child entities
+#### Helper to save a root entity and all child entities
 
 Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this helper performs the necessary inserts/updates/deletes. It skips updating identical records.
 
