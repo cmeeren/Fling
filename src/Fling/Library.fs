@@ -7,15 +7,11 @@ module Fling =
   open System.Collections.Generic
 
 
-  type private SaveChanges<'rootEntity, 'saveResult, 'arg> =
-    'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>
-
-
   let saveRoot
     (toDto: 'rootEntity -> 'rootDto)
     (insert: 'arg -> 'rootDto -> Async<'saveResult>)
     (update: 'arg -> 'rootDto -> Async<'saveResult>)
-    : SaveChanges<'rootEntity, 'saveResult, 'arg> =
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
     fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
       async {
         match oldRoot with
@@ -38,8 +34,8 @@ module Fling =
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
     (delete: 'arg -> 'childDtoId -> Async<unit>)
-    (existingSave: SaveChanges<'rootEntity, 'saveResult, 'arg>)
-    : SaveChanges<'rootEntity, 'saveResult, 'arg> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
     fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
       async {
         let! result = existingSave arg oldRoot newRoot
@@ -84,8 +80,8 @@ module Fling =
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
     (delete: 'arg -> 'childDtoId -> Async<unit>)
-    (existingSave: SaveChanges<'rootEntity, 'saveResult, 'arg>)
-    : SaveChanges<'rootEntity, 'saveResult, 'arg> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
     saveChildren (toDto >> Option.toList) getId insert update delete existingSave
 
 
@@ -93,8 +89,8 @@ module Fling =
     (toDto: 'rootEntity -> 'childDto)
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
-    (existingSave: SaveChanges<'rootEntity, 'saveResult, 'arg>)
-    : SaveChanges<'rootEntity, 'saveResult, 'arg> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
     saveChildren
       (toDto >> List.singleton)
       (fun _ -> 0)  // We always have exactly one child
