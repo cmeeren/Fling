@@ -7,7 +7,7 @@ module Fling =
   open System.Collections.Generic
 
 
-  let saveRoot
+  let saveRootWithOutput
     (toDto: 'rootEntity -> 'rootDto)
     (insert: 'arg -> 'rootDto -> Async<'saveResult>)
     (update: 'arg -> 'rootDto -> Async<'saveResult>)
@@ -28,14 +28,24 @@ module Fling =
       }
 
 
+  let saveRoot
+    (toDto: 'rootEntity -> 'rootDto)
+    (insert: 'arg -> 'rootDto -> Async<unit>)
+    (update: 'arg -> 'rootDto -> Async<unit>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<unit> =
+    fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
+      saveRootWithOutput toDto insert update arg oldRoot newRoot
+      |> Async.Ignore<unit option>
+
+
   let saveChildren
     (toDtos: 'rootEntity -> 'childDto list)
     (getId: 'childDto -> 'childDtoId)
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
     (delete: 'arg -> 'childDtoId -> Async<unit>)
-    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
-    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
     fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
       async {
         let! result = existingSave arg oldRoot newRoot
@@ -80,8 +90,8 @@ module Fling =
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
     (delete: 'arg -> 'childDtoId -> Async<unit>)
-    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
-    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
     saveChildren (toDto >> Option.toList) getId insert update delete existingSave
 
 
@@ -89,8 +99,8 @@ module Fling =
     (toDto: 'rootEntity -> 'childDto)
     (insert: 'arg -> 'childDto -> Async<unit>)
     (update: 'arg -> 'childDto -> Async<unit>)
-    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option>)
-    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
     saveChildren
       (toDto >> List.singleton)
       (fun _ -> 0)  // We always have exactly one child

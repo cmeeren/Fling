@@ -410,7 +410,7 @@ let tests =
               let rootToToManyDtos () = toManyDtos
 
               let save =
-                saveRoot rootToDto insertRoot updateRoot
+                saveRootWithOutput rootToDto insertRoot updateRoot
                 |> saveChild
                      rootToToOneDto
                      insertToOne
@@ -548,7 +548,7 @@ let tests =
               let rootToToManyDtos = function 1 -> toManyDtos | 2 -> toManyDtos' | _ -> failwith "Invalid arg"
 
               let save =
-                saveRoot rootToDto insertRoot updateRoot
+                saveRootWithOutput rootToDto insertRoot updateRoot
                 |> saveChild
                      rootToToOneDto
                      insertToOne

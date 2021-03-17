@@ -341,9 +341,8 @@ module Db =
       async {
         let conn = SqlConnection connStr
         use tran = createTransaction conn
-        let! res = save (conn, tran) oldOrder newOrder
+        do! save (conn, tran) oldOrder newOrder
         commit tran
-        return res
       }
 
 
