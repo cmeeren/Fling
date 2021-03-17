@@ -31,12 +31,12 @@ jobs:
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
         PROJECT_FILE_PATH: "src/Fling/Fling.fsproj"
-        PACKAGE_NAME: "Fling"
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        TAG_FORMAT: Fling/v*
 
     - name: Publish NuGet
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
-        PROJECT_FILE_PATH: "src/Fling/Fling.fsproj"
-        PACKAGE_NAME: "Fling"
+        PROJECT_FILE_PATH: "src/Fling.Interop.Facil/Fling.Interop.Facil.fsproj"
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        TAG_FORMAT: Fling.Interop.Facil/v*
