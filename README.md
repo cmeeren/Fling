@@ -158,7 +158,7 @@ let orderFromDtos
 
 ### 4. Write the individual get/insert/update/delete DB functions for each table
 
-[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server. If you use Facil, it is highly recommended you also install Fling.Interop.Facil and see instructions later in the readme.
+[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server. If you use Facil, it is highly recommended you also install Fling.Interop.Facil and see [the instructions later in the readme](#flinginteropfacil).
 
 Note that all of these functions accept `'arg` as their first argument. This can be anything, but will typically be a connection string, a connection object, or tuple containing a connection and a transaction. (Just use `()` if you don’t need it.)
 
