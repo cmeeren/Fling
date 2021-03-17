@@ -14,7 +14,7 @@
     <!-- TODO: Create and add logo -->
     <!--<PackageIcon>fling-logo-128x128.png</PackageIcon>-->
     <PackageReleaseNotes>https://github.com/cmeeren/Fling/blob/master/RELEASE_NOTES.md</PackageReleaseNotes>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <PropertyGroup>

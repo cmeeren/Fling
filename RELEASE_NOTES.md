@@ -1,9 +1,9 @@
 Release notes
 ==============
 
-### vNext
+### 0.2.0 (2021-03-17)
 
-* `saveRoot` now takes insert/update functions that return `Async<unit>`; use the new `saveRootWithOutput` to return a value from insert/update
+* Breaking: `saveRoot` now takes insert/update functions that return `Async<unit>`. For the old signature, use the new function `saveRootWithOutput`.
 
 ### 0.1.0 (2021-03-15)
 
