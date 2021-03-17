@@ -5,78 +5,9 @@ open Fling
 
 
 
-//// TODO: Remove if not neeeded, or rename
-//[<AutoOpen>]
-//module Update =
-
-
-//  type F< ^script, ^script_executable, 'param, 'result when
-//          ^script : (static member WithConnection: SqlConnection -> ^script)
-//          and ^script : (member ConfigureCommand: (SqlCommand -> unit) -> ^script)
-//          and ^script : (member WithParameters: 'param -> ^script_executable)
-//          and ^script_executable : (member AsyncExecute: unit -> Async<'result>)> =
-
-//    static member inline withTransaction< ^script>
-//      (conn: SqlConnection, tran: SqlTransaction)
-//      (param: 'param)
-//      : Async<unit> =
-//      let withConn = (^script: (static member WithConnection: SqlConnection -> ^script) conn)
-//      let withConfiguredCmd = (^script: (member ConfigureCommand: (SqlCommand -> unit) -> ^script) withConn, (fun (cmd: SqlCommand) -> cmd.Transaction <- tran))
-//      let executable = (^script: (member WithParameters: 'param -> ^script_executable) withConfiguredCmd, param)
-//      (^script_executable: (member AsyncExecute: unit -> Async<'result>) executable) |> Async.Ignore<_>
-
-
-//[<AutoOpen>]
-//module SaveRoot =
-
-
-//  type F< ^insertScript, ^insertScript_executable, 'insertParam, ^updateScript, ^updateScript_executable, 'updateParam, 'rootEntity, 'rootDto when
-//          ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-//          and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-//          and ^insertScript : (member WithParameters: 'insertParam -> ^insertScript_executable)
-//          and ^insertScript_executable : (member AsyncExecute: unit -> Async<unit>)
-//          and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
-//          and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
-//          and ^updateScript : (member WithParameters: 'updateParam -> ^updateScript_executable)
-//          and ^updateScript_executable : (member AsyncExecute: unit -> Async<unit>)
-//          and 'rootDto : equality
-//          > =
-
-//    static member inline saveRoot< ^insertScript, ^updateScript>
-//      (toDto: 'rootEntity -> 'rootDto) =
-//        Fling.saveRoot
-//          toDto
-//          F.withTransaction< ^insertScript>
-//          F.withTransaction< ^updateScript>
-
-
-
-//[<AutoOpen>]
-//module WithTransaction =
-
-
-//  type Fling< ^script, ^script_executable, 'param, 'result when
-//              ^script : (static member WithConnection: SqlConnection -> ^script)
-//              and ^script : (member ConfigureCommand: (SqlCommand -> unit) -> ^script)
-//              and ^script : (member WithParameters: 'param -> ^script_executable)
-//              and ^script_executable : (member AsyncExecute: unit -> Async<'result>)> =
-
-//    // TODO: Rename? (and module)
-//    static member inline withTransaction< ^script>
-//      (conn: SqlConnection, tran: SqlTransaction)
-//      (param: 'param)
-//      : Async<unit> =
-//      let withConn = (^script: (static member WithConnection: SqlConnection -> ^script) conn)
-//      let withConfiguredCmd = (^script: (member ConfigureCommand: (SqlCommand -> unit) -> ^script) withConn, (fun (cmd: SqlCommand) -> cmd.Transaction <- tran))
-//      let exexutable = (^script: (member WithParameters: 'param -> ^script_executable) withConfiguredCmd, param)
-//      (^script_executable: (member AsyncExecute: unit -> Async<'result>) exexutable) |> Async.Ignore<_>
-
-
-
 module Fling =
 
 
-  // TODO: Remove if not needed
   let withTransactionFromConnStr f connStr oldEntity newEntity =
     async {
       let! ct = Async.CancellationToken
