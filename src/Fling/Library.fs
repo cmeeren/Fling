@@ -84,6 +84,22 @@ module Fling =
       }
 
 
+  let saveChildrenWithoutUpdate
+    (toDtos: 'rootEntity -> 'childDto list)
+    (getId: 'childDto -> 'childDtoId)
+    (insert: 'arg -> 'childDto -> Async<unit>)
+    (delete: 'arg -> 'childDtoId -> Async<unit>)
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+    saveChildren
+      toDtos
+      getId
+      insert
+      (fun _ dto -> failwith $"Update needed in saveChildrenWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}")
+      delete
+      existingSave
+
+
   let saveOptChild
     (toDto: 'rootEntity -> 'childDto option)
     (getId: 'childDto -> 'childDtoId)
@@ -93,6 +109,22 @@ module Fling =
     (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
     saveChildren (toDto >> Option.toList) getId insert update delete existingSave
+
+
+  let saveOptChildWithoutUpdate
+    (toDto: 'rootEntity -> 'childDto option)
+    (getId: 'childDto -> 'childDtoId)
+    (insert: 'arg -> 'childDto -> Async<unit>)
+    (delete: 'arg -> 'childDtoId -> Async<unit>)
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+    saveOptChild
+      toDto
+      getId
+      insert
+      (fun _ dto -> failwith $"Update needed in saveOptChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}")
+      delete
+      existingSave
 
 
   let saveChild
@@ -108,7 +140,18 @@ module Fling =
       update
       (fun _ -> failwith "saveChild should never delete")
       existingSave
+      
 
+  let saveChildWithoutUpdate
+    (toDto: 'rootEntity -> 'childDto)
+    (insert: 'arg -> 'childDto -> Async<unit>)
+    (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+    saveChild
+      toDto
+      insert
+      (fun _ dto -> failwith $"Update needed in saveChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}")
+      existingSave
 
   type Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg when 'rootDtoId: equality> =
     { GetId: 'rootDto -> 'rootDtoId

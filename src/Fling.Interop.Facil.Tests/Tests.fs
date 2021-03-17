@@ -323,41 +323,60 @@ module UsageCompileTimeTests =
 
 
   let save : string -> Root option -> Root -> Async<unit> =
-    saveRoot Root_Insert Root_Update rootToDto
+    saveRoot rootToDto Root_Insert Root_Update
     |> saveChild
+         rootToToOneDto
          ChildToOne_Insert
          ChildToOne_Update
-         rootToToOneDto
     |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
          ChildToOneOpt_Insert
          ChildToOneOpt_Update
          ChildToOneOpt_Delete
-         rootToToOneOptDto
-         (fun dto -> dto.RootId)
     |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
          ChildToMany_Insert
          ChildToMany_Update
          ChildToMany_Delete
-         rootToToManyDtos
-         (fun dto -> dto.Id)
     |> withTransactionFromConnStr
 
+
   let saveWithOutput : string -> Root option -> Root -> Async<int option> =
-    saveRootWithOutput Root_Insert Root_Update rootToDto
+    saveRootWithOutput rootToDto Root_Insert Root_Update
     |> saveChild
+         rootToToOneDto
          ChildToOne_Insert
          ChildToOne_Update
-         rootToToOneDto
     |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
          ChildToOneOpt_Insert
          ChildToOneOpt_Update
          ChildToOneOpt_Delete
-         rootToToOneOptDto
-         (fun dto -> dto.RootId)
     |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
          ChildToMany_Insert
          ChildToMany_Update
          ChildToMany_Delete
+    |> withTransactionFromConnStr
+
+
+  let saveWithoutUpdate : string -> Root option -> Root -> Async<unit> =
+    saveRoot rootToDto Root_Insert Root_Update
+    |> saveChildWithoutUpdate
+         rootToToOneDto
+         ChildToOne_Insert
+    |> saveOptChildWithoutUpdate
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         ChildToOneOpt_Insert
+         ChildToOneOpt_Delete
+    |> saveChildrenWithoutUpdate
          rootToToManyDtos
          (fun dto -> dto.Id)
+         ChildToMany_Insert
+         ChildToMany_Delete
     |> withTransactionFromConnStr
