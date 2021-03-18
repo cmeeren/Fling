@@ -305,18 +305,16 @@ let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
 
 #### Helper to save a root entity and all child entities
 
-Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this helper performs the necessary inserts/updates/deletes. It skips updating identical records.
+Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this helper performs the necessary inserts/updates/deletes. It skips updating identical records (compared using `=`).
 
-If the root entity was inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
-
-Everything is done in the order specified here. For to-many child entities, all deletes are performed first, then each new child is either inserted or updated (or skipped if it’s equal).
+Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each new child is either inserted or updated (or skipped if it’s equal).
 
 For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of the DTO, which will be passed to the `delete` function if the entity needs to be deleted.
 
 ```f#
 open Fling.Fling
 
-let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
+let save : 'arg -> Order option -> Order -> Async<unit> =
   saveRoot orderToDbDto insertOrder updateOrder
   |> saveChildren
        orderToLineDtos
@@ -343,6 +341,8 @@ let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
 ```
 
 Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all child entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
+
+If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. You then get `Async<'a option>` instead of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
 ### 6. Call the helpers and profit
 
