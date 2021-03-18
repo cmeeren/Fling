@@ -451,7 +451,7 @@ let save : (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<un
        OrderPriceData_Update
 ```
 
-Use `withTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string) and run the whole save in a transaction. This is useful if you don’t need to run the saving in a transaction with anything else:
+Use `withTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string) and run the whole save in a transaction. This is useful if you don’t need to run the save in a transaction with anything else:
 
 ```f#
 let save : string -> Order option -> Order -> Async<unit> =
