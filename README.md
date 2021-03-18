@@ -309,7 +309,7 @@ Given an old root entity (`None` for initial creation, must be `Some` for update
 
 Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each new child is either inserted or updated (or skipped if it’s equal).
 
-For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of the DTO, which will be passed to the `delete` function if the entity needs to be deleted.
+For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of the DTO. This will be passed to the `delete` function if the entity needs to be deleted, and is used for to-many children to know which child entities to compare, delete, and insert. Though these are trivial, bugs can sneak in here – [Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
 
 ```f#
 open Fling.Fling
@@ -429,19 +429,19 @@ let save : (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<un
   saveRoot orderToDbDto Order_Insert Order_Update
   |> saveChildren
        orderToLineDtos
-       (fun dto -> dto.OrderLineId)
+       DbGen.TableDtos.OrderLine.getPrimaryKey
        OrderLine_Insert
        OrderLine_Update
        OrderLine_Delete
   |> saveChildren
        orderToAssociatedUserDtos
-       (fun dto -> dto.OrderId, dto.UserId)
+       DbGen.TableDtos.OrderAssociatedUser.getPrimaryKey
        OrderAssociatedUser_Insert
        OrderAssociatedUser_Update
        OrderAssociatedUser_Delete
   |> saveOptChild
        orderToCouponDto
-       (fun dto -> dto.OrderId)
+       DbGen.TableDtos.OrderCoupon.getPrimaryKey
        OrderCoupon_Insert
        OrderCoupon_Update
        OrderCoupon_Delete
