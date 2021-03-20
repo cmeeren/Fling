@@ -340,7 +340,7 @@ let save : 'arg -> Order option -> Order -> Async<unit> =
        updatePriceData
 ```
 
-Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all child entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
+Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
 
 If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. You then get `Async<'a option>` instead of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
