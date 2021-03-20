@@ -352,10 +352,10 @@ For example:
 let saveChangesToOrder connStr (oldOrder: Order option) (newOrder: Order) =
   async {
     use conn = new SqlConnection(connStr)
-    do! conn.OpenAsync(ct) |> Async.AwaitTask
+    do! conn.OpenAsync() |> Async.AwaitTask
     use tran = conn.BeginTransaction()
     do! save (conn, tran) oldOrder newOrder
-    do! tran.CommitAsync(ct) |> Async.AwaitTask
+    do! tran.CommitAsync() |> Async.AwaitTask
   }
 
 let getOrderById connStr (OrderId orderId) =
