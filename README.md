@@ -374,6 +374,17 @@ let getAllOrders connStr =
   }
 ```
 
+
+Production readiness
+--------------------
+
+Fling is production ready.
+
+Fling is fairly well tested and is used in several mission-critical production services at our company. I’m not claiming it’s perfect, or even bug-free, but I have a vested interest in keeping it working properly.
+
+It’s still at 0.x because it's still new and I may still be discovering improvements that require breaking changes every now and then. However, do not take 0.x to mean that it’s a buggy mess, or that the API will radically change every other week. Breaking changes will cause a lot of churn for me, too.
+
+
 Fling.Interop.Facil
 -------------------
 
