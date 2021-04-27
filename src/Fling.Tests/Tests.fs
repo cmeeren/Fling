@@ -607,4 +607,302 @@ let tests =
         ]
 
 
+      testList "saveWithDifferentOldNew" [
+
+
+          testCase "Returns correct result and calls DB functions in sequence with correct args when old is None" <| fun () ->
+            Property.check <| property {
+
+              let! arg = GenX.auto<int>
+              let! result = GenX.auto<int>
+
+              let! rootDto, toOneDto, toOneOptDto, toManyDtos = Gen.rootDtoWithChildDtos
+
+              let mutable i = 1
+
+              let mutable insertRootCalledWith = []
+
+              let insertRoot arg dto =
+                async {
+                  insertRootCalledWith <- insertRootCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                  return result
+                }
+
+              let mutable updateRootCalledWith = []
+
+              let updateRoot arg dto =
+                async {
+                  updateRootCalledWith <- updateRootCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                  return result
+                }
+
+              let mutable insertToOneCalledWith = []
+
+              let insertToOne arg dto =
+                async {
+                  insertToOneCalledWith <- insertToOneCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToOneCalledWith = []
+
+              let updateToOne arg dto =
+                async {
+                  updateToOneCalledWith <- updateToOneCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable insertToOneOptCalledWith = []
+
+              let insertToOneOpt arg dto =
+                async {
+                  insertToOneOptCalledWith <- insertToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToOneOptCalledWith = []
+
+              let updateToOneOpt arg dto =
+                async {
+                  updateToOneOptCalledWith <- updateToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable deleteToOneOptCalledWith = []
+
+              let deleteToOneOpt arg dto =
+                async {
+                  deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable insertToManyCalledWith = []
+
+              let insertToMany arg dto =
+                async {
+                  insertToManyCalledWith <- insertToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToManyCalledWith = []
+
+              let updateToMany arg dto =
+                async {
+                  updateToManyCalledWith <- updateToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable deleteToManyCalledWith = []
+
+              let deleteToMany arg dto =
+                async {
+                  deleteToManyCalledWith <- deleteToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+
+              let rootToDto () = rootDto
+              let rootToToOneDto () = toOneDto
+              let rootToToOneOptDto () = toOneOptDto
+              let rootToToManyDtos () = toManyDtos
+
+              let save =
+                saveRootWithOutput rootToDto insertRoot updateRoot
+                |> saveChildWithDifferentOldNew
+                     (fun _ -> failwith "Should not be called")
+                     rootToToOneDto
+                     insertToOne
+                     updateToOne
+                |> saveOptChildWithDifferentOldNew
+                     (fun _ -> failwith "Should not be called")
+                     rootToToOneOptDto
+                     (fun dto -> dto.RootId)
+                     insertToOneOpt
+                     updateToOneOpt
+                     deleteToOneOpt
+                |> saveChildrenWithDifferentOldNew
+                     (fun _ -> failwith "Should not be called")
+                     rootToToManyDtos
+                     (fun dto -> dto.Id)
+                     insertToMany
+                     updateToMany
+                     deleteToMany
+
+              let actual = save arg None () |> Async.RunSynchronously
+
+              let mutable expectedId = 0
+              let nextExpectedId () =
+                expectedId <- expectedId + 1
+                expectedId
+
+              Expect.equal actual (Some result) "Incorrect result"
+              Expect.sequenceEqual insertRootCalledWith [nextExpectedId(), arg, rootDto] "insertRootCalledWith"
+              Expect.sequenceEqual updateRootCalledWith [] "updateRoot should not be called"
+              Expect.sequenceEqual insertToOneCalledWith [nextExpectedId(), arg, toOneDto] "insertToOne called in wrong order or with wrong args"
+              Expect.sequenceEqual updateToOneCalledWith [] "updateToOne should not be called"
+              Expect.sequenceEqual insertToOneOptCalledWith [for x in Option.toList toOneOptDto do (nextExpectedId(), arg, x)] "insertToOneOpt called in wrong order or with wrong args"
+              Expect.sequenceEqual updateToOneOptCalledWith [] "updateToOneOpt should not be called"
+              Expect.sequenceEqual deleteToOneOptCalledWith [] "deleteToOneOpt should not be called"
+              Expect.sequenceEqual insertToManyCalledWith [for x in toManyDtos do (nextExpectedId(), arg, x)] "insertToMany called in wrong order or with wrong args"
+              Expect.sequenceEqual updateToManyCalledWith [] "updateToMany should not be called"
+              Expect.sequenceEqual deleteToManyCalledWith [] "deleteToMany should not be called"
+            }
+
+
+          testCase "Returns correct result and calls DB functions in sequence with correct args when old is Some" <| fun () ->
+            Property.checkWith (PropertyConfig.defaultConfig |> PropertyConfig.withTests 1000<tests>) <| property {
+
+              let! arg = GenX.auto<int>
+              let! result = GenX.auto<int>
+
+              let! rootDto, toOneDto, toOneOptDto, toManyDtos, _, toOneDto', toOneOptDto', toManyDtos' = Gen.rootDtoWithChildDtosWithUpdates
+
+              let mutable i = 1
+
+              let mutable insertRootCalledWith = []
+
+              let insertRoot arg dto =
+                async {
+                  insertRootCalledWith <- insertRootCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                  return result
+                }
+
+              let mutable updateRootCalledWith = []
+
+              let updateRoot arg dto =
+                async {
+                  updateRootCalledWith <- updateRootCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                  return result
+                }
+
+              let mutable insertToOneCalledWith = []
+
+              let insertToOne arg dto =
+                async {
+                  insertToOneCalledWith <- insertToOneCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToOneCalledWith = []
+
+              let updateToOne arg dto =
+                async {
+                  updateToOneCalledWith <- updateToOneCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable insertToOneOptCalledWith = []
+
+              let insertToOneOpt arg dto =
+                async {
+                  insertToOneOptCalledWith <- insertToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToOneOptCalledWith = []
+
+              let updateToOneOpt arg dto =
+                async {
+                  updateToOneOptCalledWith <- updateToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable deleteToOneOptCalledWith = []
+
+              let deleteToOneOpt arg dto =
+                async {
+                  deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable insertToManyCalledWith = []
+
+              let insertToMany arg dto =
+                async {
+                  insertToManyCalledWith <- insertToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable updateToManyCalledWith = []
+
+              let updateToMany arg dto =
+                async {
+                  updateToManyCalledWith <- updateToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+              let mutable deleteToManyCalledWith = []
+
+              let deleteToMany arg dto =
+                async {
+                  deleteToManyCalledWith <- deleteToManyCalledWith @ [i, arg, dto]
+                  i <- i + 1
+                }
+
+
+              let save =
+                saveRootWithOutput (fun _ -> rootDto) insertRoot updateRoot
+                |> saveChildWithDifferentOldNew
+                     (fun _ -> toOneDto)
+                     (fun _ -> toOneDto')
+                     insertToOne
+                     updateToOne
+                |> saveOptChildWithDifferentOldNew
+                     (fun _ -> toOneOptDto)
+                     (fun _ -> toOneOptDto')
+                     (fun dto -> dto.RootId)
+                     insertToOneOpt
+                     updateToOneOpt
+                     deleteToOneOpt
+                |> saveChildrenWithDifferentOldNew
+                     (fun _ -> toManyDtos)
+                     (fun _ -> toManyDtos')
+                     (fun dto -> dto.Id)
+                     insertToMany
+                     updateToMany
+                     deleteToMany
+
+              let actual = save arg (Some ()) () |> Async.RunSynchronously
+
+              let mutable expectedId = 0
+              let nextExpectedId () =
+                expectedId <- expectedId + 1
+                expectedId
+
+              Expect.equal actual None "Incorrect result"
+              Expect.sequenceEqual insertRootCalledWith [] "insertRootCalledWith"
+              Expect.sequenceEqual updateRootCalledWith [] "updateRoot"
+              Expect.sequenceEqual insertToOneCalledWith [] "insertToOne"
+              Expect.sequenceEqual updateToOneCalledWith [if toOneDto <> toOneDto' then nextExpectedId(), arg, toOneDto'] "updateToOne"
+              Expect.sequenceEqual insertToOneOptCalledWith [if toOneOptDto.IsNone && toOneOptDto'.IsSome then nextExpectedId(), arg, toOneOptDto'.Value] "insertToOneOpt"
+              Expect.sequenceEqual updateToOneOptCalledWith [if toOneOptDto.IsSome && toOneOptDto'.IsSome && toOneOptDto <> toOneOptDto' then nextExpectedId(), arg, toOneOptDto'.Value] "updateToOneOpt"
+              Expect.sequenceEqual deleteToOneOptCalledWith [if toOneOptDto.IsSome && toOneOptDto'.IsNone then nextExpectedId(), arg, toOneOptDto.Value.RootId] "deleteToOneOpt"
+
+              let oldToManyById = toManyDtos |> List.map (fun x -> x.Id, x) |> Map.ofList
+              let newToManyById = toManyDtos' |> List.map (fun x -> x.Id, x) |> Map.ofList
+
+              let deletedIds = toManyDtos |> List.map (fun x -> x.Id) |> List.filter (not << newToManyById.ContainsKey)
+              Expect.sequenceEqual deleteToManyCalledWith [for id in deletedIds do nextExpectedId(), arg, id] "deleteToMany"
+
+              let mutable expectedInsertToManyCalledWith = []
+              let mutable expectedUpdateToManyCalledWith = []
+
+              for newToManyDto in toManyDtos' do
+                match oldToManyById.TryFind newToManyDto.Id with
+                | None -> expectedInsertToManyCalledWith <- expectedInsertToManyCalledWith @ [nextExpectedId(), arg, newToManyDto]
+                | Some oldToManyDto when oldToManyDto = newToManyDto -> ()
+                | Some _ -> expectedUpdateToManyCalledWith <- expectedUpdateToManyCalledWith @ [nextExpectedId(), arg, newToManyDto]
+
+              Expect.sequenceEqual insertToManyCalledWith expectedInsertToManyCalledWith "insertToMany"
+              Expect.sequenceEqual updateToManyCalledWith expectedUpdateToManyCalledWith "updateToMany"
+            }
+
+
+        ]
+
+
     ]

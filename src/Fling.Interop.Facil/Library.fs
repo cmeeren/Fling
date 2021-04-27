@@ -94,17 +94,18 @@ module Fling =
       update
 
 
-  let inline saveChild< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^childDto, 'rootEntity, 'insertResult, 'updateResult, 'saveResult when
-                        ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                        and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                        and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                        and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                        and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
-                        and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
-                        and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
-                        and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
-                        and ^childDto : equality>
-    (toDto: 'rootEntity -> ^childDto)
+  let inline saveChildWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^childDto, 'rootEntity, 'insertResult, 'updateResult, 'saveResult when
+                                           ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                           and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                           and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                           and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                           and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
+                                           and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
+                                           and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
+                                           and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
+                                           and ^childDto : equality>
+    (oldToDto: 'rootEntity -> ^childDto)
+    (newToDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
     (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
@@ -125,20 +126,30 @@ module Fling =
         do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) exexutable) |> Async.Ignore<'updateResult>
       }
 
-    Fling.saveChild
-      toDto
+    Fling.saveChildWithDifferentOldNew
+      oldToDto
+      newToDto
       insert
       update
       existingSave
 
 
-  let inline saveChildWithoutUpdate< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^childDto, 'rootEntity, 'insertResult, 'updateResult, 'saveResult when
-                                     ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                                     and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                                     and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                                     and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                                     and ^childDto : equality>
+  let inline saveChild
     (toDto: 'rootEntity -> ^childDto)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (_updateScriptCtor: unit -> ^updateScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    saveChildWithDifferentOldNew toDto toDto _insertScriptCtor _updateScriptCtor existingSave
+
+
+  let inline saveChildWithoutUpdateWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^childDto, 'rootEntity, 'insertResult, 'updateResult, 'saveResult when
+                                                        ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                                        and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                                        and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                                        and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                                        and ^childDto : equality>
+    (oldToDto: 'rootEntity -> ^childDto)
+    (newToDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
     (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
 
@@ -150,28 +161,37 @@ module Fling =
         do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
       }
 
-    Fling.saveChildWithoutUpdate
-      toDto
+    Fling.saveChildWithoutUpdateWithDifferentOldNew
+      oldToDto
+      newToDto
       insert
       existingSave
 
 
-  let inline saveOptChild< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
-                           ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                           and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                           and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                           and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                           and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
-                           and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
-                           and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
-                           and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
-                           and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
-                           and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
-                           and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
-                           and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
-                           and ^childDto : equality
-                           and ^childDtoId : equality>
-    (toDto: 'rootEntity -> ^childDto option)
+  let inline saveChildWithoutUpdate
+    (toDto: 'rootEntity -> ^childDto)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    saveChildWithoutUpdateWithDifferentOldNew toDto toDto _insertScriptCtor existingSave
+
+
+  let inline saveOptChildWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
+                                              ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                              and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                              and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                              and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                              and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
+                                              and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
+                                              and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
+                                              and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
+                                              and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
+                                              and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
+                                              and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
+                                              and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
+                                              and ^childDto : equality
+                                              and ^childDtoId : equality>
+    (oldToDto: 'rootEntity -> ^childDto option)
+    (newToDto: 'rootEntity -> ^childDto option)
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
@@ -203,8 +223,9 @@ module Fling =
         do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
       }
 
-    Fling.saveOptChild
-      toDto
+    Fling.saveOptChildWithDifferentOldNew
+      oldToDto
+      newToDto
       getId
       insert
       update
@@ -212,18 +233,30 @@ module Fling =
       existingSave
 
 
-  let inline saveOptChildWithoutUpdate< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
-                                        ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                                        and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                                        and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                                        and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                                        and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
-                                        and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
-                                        and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
-                                        and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
-                                        and ^childDto : equality
-                                        and ^childDtoId : equality>
+  let inline saveOptChild
     (toDto: 'rootEntity -> ^childDto option)
+    (getId: ^childDto -> 'childDtoId)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (_updateScriptCtor: unit -> ^updateScript)
+    (_deleteScriptCtor: unit -> ^deleteScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    =
+    saveOptChildWithDifferentOldNew toDto toDto getId _insertScriptCtor _updateScriptCtor _deleteScriptCtor existingSave
+
+
+  let inline saveOptChildWithoutUpdateWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
+                                                           ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                                           and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                                           and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                                           and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                                           and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
+                                                           and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
+                                                           and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
+                                                           and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
+                                                           and ^childDto : equality
+                                                           and ^childDtoId : equality>
+    (oldToDto: 'rootEntity -> ^childDto option)
+    (newToDto: 'rootEntity -> ^childDto option)
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
@@ -246,30 +279,42 @@ module Fling =
         do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
       }
       
-    Fling.saveOptChildWithoutUpdate
-      toDto
+    Fling.saveOptChildWithoutUpdateWithDifferentOldNew
+      oldToDto
+      newToDto
       getId
       insert
       delete
       existingSave
 
 
-  let inline saveChildren< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
-                           ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                           and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                           and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                           and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                           and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
-                           and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
-                           and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
-                           and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
-                           and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
-                           and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
-                           and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
-                           and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
-                           and ^childDto : equality
-                           and ^childDtoId : equality>
-    (toDtos: 'rootEntity -> ^childDto list)
+  let inline saveOptChildWithoutUpdate
+    (toDto: 'rootEntity -> ^childDto option)
+    (getId: ^childDto -> 'childDtoId)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (_deleteScriptCtor: unit -> ^deleteScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    =
+    saveOptChildWithoutUpdateWithDifferentOldNew toDto toDto getId _insertScriptCtor _deleteScriptCtor existingSave
+
+
+  let inline saveChildrenWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
+                                              ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                              and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                              and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                              and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                              and ^updateScript : (static member WithConnection: SqlConnection -> ^updateScript)
+                                              and ^updateScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^updateScript)
+                                              and ^updateScript : (member WithParameters: ^childDto -> ^updateScript_executable)
+                                              and ^updateScript_executable : (member AsyncExecute: unit -> Async<'updateResult>)
+                                              and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
+                                              and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
+                                              and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
+                                              and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
+                                              and ^childDto : equality
+                                              and ^childDtoId : equality>
+    (oldToDtos: 'rootEntity -> ^childDto list)
+    (newToDtos: 'rootEntity -> ^childDto list)
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
@@ -301,8 +346,9 @@ module Fling =
         do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
       }
 
-    Fling.saveChildren
-      toDtos
+    Fling.saveChildrenWithDifferentOldNew
+      oldToDtos
+      newToDtos
       getId
       insert
       update
@@ -310,18 +356,30 @@ module Fling =
       existingSave
 
 
-  let inline saveChildrenWithoutUpdate< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
-                                        ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
-                                        and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
-                                        and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
-                                        and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
-                                        and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
-                                        and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
-                                        and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
-                                        and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
-                                        and ^childDto : equality
-                                        and ^childDtoId : equality>
+  let inline saveChildren
     (toDtos: 'rootEntity -> ^childDto list)
+    (getId: ^childDto -> 'childDtoId)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (_updateScriptCtor: unit -> ^updateScript)
+    (_deleteScriptCtor: unit -> ^deleteScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    =
+    saveChildrenWithDifferentOldNew toDtos toDtos getId _insertScriptCtor _updateScriptCtor _deleteScriptCtor existingSave
+
+
+  let inline saveChildrenWithoutUpdateWithDifferentOldNew< ^insertScript, ^insertScript_executable, ^updateScript, ^updateScript_executable, ^deleteScript, ^deleteScript_executable, ^childDto, 'childDtoId, 'rootEntity, 'insertResult, 'updateResult, 'deleteResult, 'saveResult when
+                                                           ^insertScript : (static member WithConnection: SqlConnection -> ^insertScript)
+                                                           and ^insertScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^insertScript)
+                                                           and ^insertScript : (member WithParameters: ^childDto -> ^insertScript_executable)
+                                                           and ^insertScript_executable : (member AsyncExecute: unit -> Async<'insertResult>)
+                                                           and ^deleteScript : (static member WithConnection: SqlConnection -> ^deleteScript)
+                                                           and ^deleteScript : (member ConfigureCommand: (SqlCommand -> unit) -> ^deleteScript)
+                                                           and ^deleteScript : (member WithParameters: 'childDtoId -> ^deleteScript_executable)
+                                                           and ^deleteScript_executable : (member AsyncExecute: unit -> Async<'deleteResult>)
+                                                           and ^childDto : equality
+                                                           and ^childDtoId : equality>
+    (oldToDtos: 'rootEntity -> ^childDto list)
+    (newToDtos: 'rootEntity -> ^childDto list)
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
@@ -344,12 +402,23 @@ module Fling =
         do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
       }
 
-    Fling.saveChildrenWithoutUpdate
-      toDtos
+    Fling.saveChildrenWithoutUpdateWithDifferentOldNew
+      oldToDtos
+      newToDtos
       getId
       insert
       delete
       existingSave
+
+
+  let inline saveChildrenWithoutUpdate
+    (toDtos: 'rootEntity -> ^childDto list)
+    (getId: ^childDto -> 'childDtoId)
+    (_insertScriptCtor: unit -> ^insertScript)
+    (_deleteScriptCtor: unit -> ^deleteScript)
+    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    =
+    saveChildrenWithoutUpdateWithDifferentOldNew toDtos toDtos getId _insertScriptCtor _deleteScriptCtor existingSave
 
 
   let inline loadChild< ^script, ^script_executable, 'rootDto, 'rootDtoId, 'childDto, 'loadResult when
