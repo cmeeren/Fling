@@ -340,7 +340,7 @@ let save : 'arg -> Order option -> Order -> Async<unit> =
        updatePriceData
 ```
 
-Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all child entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
+Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
 
 If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. You then get `Async<'a option>` instead of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
@@ -352,10 +352,10 @@ For example:
 let saveChangesToOrder connStr (oldOrder: Order option) (newOrder: Order) =
   async {
     use conn = new SqlConnection(connStr)
-    do! conn.OpenAsync(ct) |> Async.AwaitTask
+    do! conn.OpenAsync() |> Async.AwaitTask
     use tran = conn.BeginTransaction()
     do! save (conn, tran) oldOrder newOrder
-    do! tran.CommitAsync(ct) |> Async.AwaitTask
+    do! tran.CommitAsync() |> Async.AwaitTask
   }
 
 let getOrderById connStr (OrderId orderId) =
@@ -373,6 +373,17 @@ let getAllOrders connStr =
     return! loadBatch connStr orderDtos
   }
 ```
+
+
+Production readiness
+--------------------
+
+Fling is production ready.
+
+Fling is fairly well tested and is used in several mission-critical production services at our company. I’m not claiming it’s perfect, or even bug-free, but I have a vested interest in keeping it working properly.
+
+It’s still at 0.x because it's still new and I may still be discovering improvements that require breaking changes every now and then. However, do not take 0.x to mean that it’s a buggy mess, or that the API will radically change every other week. Breaking changes will cause a lot of churn for me, too.
+
 
 Fling.Interop.Facil
 -------------------
