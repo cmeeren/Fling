@@ -1,7 +1,41 @@
 ﻿namespace Fling.Interop.Facil
 
+open System.ComponentModel
 open Microsoft.Data.SqlClient
 open Fling
+
+
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+type FacilIgnore_Executable internal () =
+  member _.AsyncExecute() = async.Return 0
+
+
+/// A mock Facil "script" that can be used as an insert/update/delete script and does
+/// nothing if called.
+type FacilIgnore () =
+  member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+  static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = FacilIgnore()
+  static member WithConnection(_conn: SqlConnection) = FacilIgnore()
+  member _.WithParameters(_dto: 'a) = FacilIgnore_Executable()
+
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+type FacilThrow_Executable internal (argStringRepresentation) =
+  member _.AsyncExecute() =
+    async {
+      invalidOp $"FacilThrow called with %s{argStringRepresentation}"
+      return 0
+    }
+
+
+/// A mock Facil "script" that can be used as an insert/update/delete script and throws if
+/// called.
+type FacilThrow () =
+  member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+  static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = FacilThrow()
+  static member WithConnection(_conn: SqlConnection) = FacilThrow()
+  member _.WithParameters(dto: 'a) = FacilThrow_Executable(sprintf "%A" dto)
 
 
 

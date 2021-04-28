@@ -380,3 +380,139 @@ module UsageCompileTimeTests =
          ChildToMany_Insert
          ChildToMany_Delete
     |> withTransactionFromConnStr
+
+
+
+module IgnoreCompileTimeTests =
+
+
+  open Fling.Interop.Facil
+  open Fling.Interop.Facil.Fling
+
+
+  let save : string -> Root option -> Root -> Async<unit> =
+    saveRoot rootToDto Root_Insert Root_Update
+    |> saveChild
+         rootToToOneDto
+         FacilIgnore
+         FacilIgnore
+    |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilIgnore
+         FacilIgnore
+         FacilIgnore
+    |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilIgnore
+         FacilIgnore
+         FacilIgnore
+    |> withTransactionFromConnStr
+
+
+  let saveWithOutput : string -> Root option -> Root -> Async<int option> =
+    saveRootWithOutput rootToDto Root_Insert Root_Update
+    |> saveChild
+         rootToToOneDto
+         FacilIgnore
+         FacilIgnore
+    |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilIgnore
+         FacilIgnore
+         FacilIgnore
+    |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilIgnore
+         FacilIgnore
+         FacilIgnore
+    |> withTransactionFromConnStr
+
+
+  let saveWithoutUpdate : string -> Root option -> Root -> Async<unit> =
+    saveRoot rootToDto Root_Insert Root_Update
+    |> saveChildWithoutUpdate
+         rootToToOneDto
+         FacilIgnore
+    |> saveOptChildWithoutUpdate
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilIgnore
+         FacilIgnore
+    |> saveChildrenWithoutUpdate
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilIgnore
+         FacilIgnore
+    |> withTransactionFromConnStr
+
+
+
+module ThrowCompileTimeTests =
+
+
+  open Fling.Interop.Facil
+  open Fling.Interop.Facil.Fling
+
+
+  let save : string -> Root option -> Root -> Async<unit> =
+    saveRoot rootToDto Root_Insert Root_Update
+    |> saveChild
+         rootToToOneDto
+         FacilThrow
+         FacilThrow
+    |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilThrow
+         FacilThrow
+         FacilThrow
+    |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilThrow
+         FacilThrow
+         FacilThrow
+    |> withTransactionFromConnStr
+
+
+  let saveWithOutput : string -> Root option -> Root -> Async<int option> =
+    saveRootWithOutput rootToDto Root_Insert Root_Update
+    |> saveChild
+         rootToToOneDto
+         FacilThrow
+         FacilThrow
+    |> saveOptChild
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilThrow
+         FacilThrow
+         FacilThrow
+    |> saveChildren
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilThrow
+         FacilThrow
+         FacilThrow
+    |> withTransactionFromConnStr
+
+
+  let saveWithoutUpdate : string -> Root option -> Root -> Async<unit> =
+    saveRoot rootToDto Root_Insert Root_Update
+    |> saveChildWithoutUpdate
+         rootToToOneDto
+         FacilThrow
+    |> saveOptChildWithoutUpdate
+         rootToToOneOptDto
+         (fun dto -> dto.RootId)
+         FacilThrow
+         FacilThrow
+    |> saveChildrenWithoutUpdate
+         rootToToManyDtos
+         (fun dto -> dto.Id)
+         FacilThrow
+         FacilThrow
+    |> withTransactionFromConnStr
