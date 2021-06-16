@@ -472,6 +472,13 @@ let save : string -> Order option -> Order -> Async<unit> =
 
 As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s insert/update script.
 
+Limitations
+-----------
+
+### Cannot interleave inserts/updates/deletes for different tables
+
+It’s not possible to interleave inserts/updates/deletes for different tables. For example, you can’t specify that Fling should *insert* first into table A and then into table B while at the same time  *delete* from table A and then from table B. The ordering of operations can only be specified at the table (or “child”) level; all inserts/updates/deletes for a table is performed before the next table. This may have implications for foreign key constraints in complex aggregates.
+
 ## Deployment checklist
 
 For maintainers.
