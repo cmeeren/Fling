@@ -1,6 +1,10 @@
 Release notes (Fling.Interop.Facil)
 ==============
 
+### 0.2.0 (2021-10-29)
+
+* Target .NET 6
+
 ### 0.1.2 (2021-04-28)
 
 * Added mock Facil scripts `FacilIgnore` and `FacilThrow` that can be used as insert/update/delete scripts and will, respectively, do nothing or throw if called.

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
@@ -20,19 +20,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expecto" Version="9.0.2" />
-    <PackageReference Include="Hedgehog" Version="0.10.0" />
-    <PackageReference Include="Hedgehog.Experimental" Version="0.4.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
-    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.11.1" />
+    <PackageReference Include="Expecto" Version="9.0.4" />
+    <PackageReference Include="Hedgehog" Version="0.11.1" />
+    <PackageReference Include="Hedgehog.Experimental" Version="0.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.12.13" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fling\Fling.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

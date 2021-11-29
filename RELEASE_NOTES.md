@@ -3,6 +3,10 @@ Release notes
 
 These are the release notes for Fling (the main package). See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for Fling.Interop.Facil.
 
+### 0.3.0 (2021-10-29)
+
+* Target .NET 6
+
 ### 0.2.2 (2021-04-27)
 
 * Added `...WithDifferentOldNew` variants of all child save functions that allows specifying a separate `toDto` function for the old and new entity. This can be useful for example if you are persisting computed state. You can load the existing persisted state from the DB together with your entity, and when persisting, you can compare the persisted state from the old entity with the new computed state based on the new entity.
