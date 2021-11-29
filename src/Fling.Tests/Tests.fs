@@ -102,7 +102,7 @@ module Gen =
     gen {
       let config =
         { GenX.defaults with SeqRange = Range.linear 1 7 }
-        |> AutoGenConfig.addGenerator (Gen.int (Range.linear 1 20))
+        |> AutoGenConfig.addGenerator (Gen.int32 (Range.linear 1 20))
         |> AutoGenConfig.addGenerator (Gen.alphaNum |> Gen.string (Range.linear 1 10))
 
       let! rootDto = GenX.autoWith<RootDto> config
