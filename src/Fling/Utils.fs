@@ -7,16 +7,16 @@ module internal Utils =
   module Async =
 
 
-    let map f asnc =
+    let map f comp =
       async {
-        let! x = asnc
+        let! x = comp
         return f x
       }
 
 
-    let bind f asnc =
+    let bind f comp =
       async {
-        let! x = asnc
+        let! x = comp
         return! f x
       }
 
