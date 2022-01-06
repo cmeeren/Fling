@@ -86,7 +86,7 @@ module FacilMock =
   type Root_Insert () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = Root_Insert()
-    static member WithConnection(_conn: SqlConnection) = Root_Insert()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = Root_Insert()
     member _.WithParameters(_id: int, _data: string) = Root_Insert_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member Id: int) dto)
@@ -99,7 +99,7 @@ module FacilMock =
   type Root_Update () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = Root_Update()
-    static member WithConnection(_conn: SqlConnection) = Root_Update()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = Root_Update()
     member _.WithParameters(_id: int, _data: string) = Root_Update_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member Id: int) dto)
@@ -113,7 +113,7 @@ module FacilMock =
   type ChildToOne_Insert () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOne_Insert()
-    static member WithConnection(_conn: SqlConnection) = ChildToOne_Insert()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_Insert()
     member _.WithParameters(_rootIt: int, _data: string) = ChildToOne_Insert_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -127,7 +127,7 @@ module FacilMock =
   type ChildToOne_Update () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOne_Update()
-    static member WithConnection(_conn: SqlConnection) = ChildToOne_Update()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_Update()
     member _.WithParameters(_rootId: int, _data: string) = ChildToOne_Update_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -141,7 +141,7 @@ module FacilMock =
   type ChildToOne_GetByRootId () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOne_GetByRootId()
-    static member WithConnection(_conn: SqlConnection) = ChildToOne_GetByRootId()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_GetByRootId()
     member _.WithParameters(_rootId: int) = ChildToOne_GetByRootId_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -154,7 +154,7 @@ module FacilMock =
   type ChildToOne_GetByRootIds () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOne_GetByRootIds()
-    static member WithConnection(_conn: SqlConnection) = ChildToOne_GetByRootIds()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToOne_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)
@@ -167,7 +167,7 @@ module FacilMock =
   type ChildToOneOpt_Insert () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOneOpt_Insert()
-    static member WithConnection(_conn: SqlConnection) = ChildToOneOpt_Insert()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_Insert()
     member _.WithParameters(_rootId: int, _data: string) = ChildToOneOpt_Insert_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -181,7 +181,7 @@ module FacilMock =
   type ChildToOneOpt_Update () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOneOpt_Update()
-    static member WithConnection(_conn: SqlConnection) = ChildToOneOpt_Update()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_Update()
     member _.WithParameters(_rootId: int, _data: string) = ChildToOneOpt_Update_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -195,7 +195,7 @@ module FacilMock =
   type ChildToOneOpt_Delete () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOneOpt_Delete()
-    static member WithConnection(_conn: SqlConnection) = ChildToOneOpt_Delete()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_Delete()
     member _.WithParameters(_rootId: int) = ChildToOneOpt_Delete_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -208,7 +208,7 @@ module FacilMock =
   type ChildToOneOpt_GetByRootId () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOneOpt_GetByRootId()
-    static member WithConnection(_conn: SqlConnection) = ChildToOneOpt_GetByRootId()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_GetByRootId()
     member _.WithParameters(_rootId: int) = ChildToOneOpt_GetByRootId_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -221,7 +221,7 @@ module FacilMock =
   type ChildToOneOpt_GetByRootIds () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToOneOpt_GetByRootIds()
-    static member WithConnection(_conn: SqlConnection) = ChildToOneOpt_GetByRootIds()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToOneOpt_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)
@@ -234,7 +234,7 @@ module FacilMock =
   type ChildToMany_Insert () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToMany_Insert()
-    static member WithConnection(_conn: SqlConnection) = ChildToMany_Insert()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_Insert()
     member _.WithParameters(_rootId: int, _id: int, _data: string) = ChildToMany_Insert_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -249,7 +249,7 @@ module FacilMock =
   type ChildToMany_Update () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToMany_Update()
-    static member WithConnection(_conn: SqlConnection) = ChildToMany_Update()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_Update()
     member _.WithParameters(_rootId: int, _id: int, _data: string) = ChildToMany_Update_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -264,7 +264,7 @@ module FacilMock =
   type ChildToMany_Delete () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToMany_Delete()
-    static member WithConnection(_conn: SqlConnection) = ChildToMany_Delete()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_Delete()
     member _.WithParameters(_id: int) = ChildToMany_Delete_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member Id: int) dto)
@@ -277,7 +277,7 @@ module FacilMock =
   type ChildToMany_GetByRootId () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToMany_GetByRootId()
-    static member WithConnection(_conn: SqlConnection) = ChildToMany_GetByRootId()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_GetByRootId()
     member _.WithParameters(_rootId: int) = ChildToMany_GetByRootId_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member RootId: int) dto)
@@ -291,7 +291,7 @@ module FacilMock =
   type ChildToMany_GetByRootIds () =
     member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
     static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = ChildToMany_GetByRootIds()
-    static member WithConnection(_conn: SqlConnection) = ChildToMany_GetByRootIds()
+    static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToMany_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
       ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)

@@ -1,6 +1,10 @@
 Release notes (Fling.Interop.Facil)
 ==============
 
+### 0.2.1 (2022-01-06)
+
+* Update for Facil 2.2.0
+
 ### 0.2.0 (2021-10-29)
 
 * Target .NET 6
