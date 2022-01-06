@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Expecto" Version="9.0.4" />
-    <PackageReference Include="Hedgehog" Version="0.11.1" />
+    <PackageReference Include="Hedgehog" Version="0.12.1" />
     <PackageReference Include="Hedgehog.Experimental" Version="0.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.12.13" />

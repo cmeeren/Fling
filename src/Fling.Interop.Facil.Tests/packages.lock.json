@@ -20,9 +20,9 @@
       },
       "Hedgehog": {
         "type": "Direct",
-        "requested": "[0.11.1, )",
-        "resolved": "0.11.1",
-        "contentHash": "+oqKFqj6Vuqww9/kecnobB1HvBZPg2LE9A/+aekj02au8SvNZF/CP+HWFH4kiwUNGiB9CBH48pJ6qoNhPmsyTA==",
+        "requested": "[0.12.1, )",
+        "resolved": "0.12.1",
+        "contentHash": "ZDwnM+UZm5JrhIbOgUIFjAZISegLfQZMN+B6Ft1ZmgABvta43KP/Ndg7q44/74UC9JeWcsgoHPuEH+Blsqs8vA==",
         "dependencies": {
           "FSharp.Core": "4.1.17"
         }
