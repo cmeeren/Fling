@@ -35,7 +35,7 @@ type FacilThrow () =
   member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
   static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = FacilThrow()
   static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = FacilThrow()
-  member _.WithParameters(dto: 'a) = FacilThrow_Executable(sprintf "%A" dto)
+  member _.WithParameters(dto: 'a) = FacilThrow_Executable $"%A{dto}"
 
 
 
