@@ -70,15 +70,15 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^rootDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^rootDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^rootDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let update (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^rootDto) : Async<unit> =
       async {
         let withConn = (^updateScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^updateScript) (conn, Some tran))
-        let exexutable = (^updateScript: (member WithParameters: ^rootDto -> ^updateScript_executable) withConn, rootDto)
-        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) exexutable) |> Async.Ignore<'updateResult>
+        let executable = (^updateScript: (member WithParameters: ^rootDto -> ^updateScript_executable) withConn, rootDto)
+        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) executable) |> Async.Ignore<'updateResult>
       }
 
     Fling.saveRoot
@@ -137,15 +137,15 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let update (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^updateScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^updateScript) (conn, Some tran))
-        let exexutable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
-        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) exexutable) |> Async.Ignore<'updateResult>
+        let executable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
+        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) executable) |> Async.Ignore<'updateResult>
       }
 
     Fling.saveChildWithDifferentOldNew
@@ -177,8 +177,8 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     Fling.saveChildWithoutUpdateWithDifferentOldNew
@@ -219,22 +219,22 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let update (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^updateScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^updateScript) (conn, Some tran))
-        let exexutable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
-        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) exexutable) |> Async.Ignore<'updateResult>
+        let executable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
+        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) executable) |> Async.Ignore<'updateResult>
       }
 
     let delete (conn: SqlConnection, tran: SqlTransaction) (childDtoId: 'childDtoId) : Async<unit> =
       async {
         let withConn = (^deleteScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^deleteScript) (conn, Some tran))
-        let exexutable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
-        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
+        let executable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
+        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) executable) |> Async.Ignore<'deleteResult>
       }
 
     Fling.saveOptChildWithDifferentOldNew
@@ -278,15 +278,15 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let delete (conn: SqlConnection, tran: SqlTransaction) (childDtoId: 'childDtoId) : Async<unit> =
       async {
         let withConn = (^deleteScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^deleteScript) (conn, Some tran))
-        let exexutable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
-        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
+        let executable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
+        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) executable) |> Async.Ignore<'deleteResult>
       }
       
     Fling.saveOptChildWithoutUpdateWithDifferentOldNew
@@ -332,22 +332,22 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let update (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^updateScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^updateScript) (conn, Some tran))
-        let exexutable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
-        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) exexutable) |> Async.Ignore<'updateResult>
+        let executable = (^updateScript: (member WithParameters: ^childDto -> ^updateScript_executable) withConn, rootDto)
+        do! (^updateScript_executable: (member AsyncExecute: unit -> Async<'updateResult>) executable) |> Async.Ignore<'updateResult>
       }
 
     let delete (conn: SqlConnection, tran: SqlTransaction) (childDtoId: 'childDtoId) : Async<unit> =
       async {
         let withConn = (^deleteScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^deleteScript) (conn, Some tran))
-        let exexutable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
-        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
+        let executable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
+        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) executable) |> Async.Ignore<'deleteResult>
       }
 
     Fling.saveChildrenWithDifferentOldNew
@@ -391,15 +391,15 @@ module Fling =
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
         let withConn = (^insertScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^insertScript) (conn, Some tran))
-        let exexutable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
-        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) exexutable) |> Async.Ignore<'insertResult>
+        let executable = (^insertScript: (member WithParameters: ^childDto -> ^insertScript_executable) withConn, rootDto)
+        do! (^insertScript_executable: (member AsyncExecute: unit -> Async<'insertResult>) executable) |> Async.Ignore<'insertResult>
       }
 
     let delete (conn: SqlConnection, tran: SqlTransaction) (childDtoId: 'childDtoId) : Async<unit> =
       async {
         let withConn = (^deleteScript: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^deleteScript) (conn, Some tran))
-        let exexutable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
-        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) exexutable) |> Async.Ignore<'deleteResult>
+        let executable = (^deleteScript: (member WithParameters: 'childDtoId -> ^deleteScript_executable) withConn, childDtoId)
+        do! (^deleteScript_executable: (member AsyncExecute: unit -> Async<'deleteResult>) executable) |> Async.Ignore<'deleteResult>
       }
 
     Fling.saveChildrenWithoutUpdateWithDifferentOldNew
