@@ -49,7 +49,7 @@ module Fling =
       do! conn.OpenAsync(ct) |> Async.AwaitTask
       use tran = conn.BeginTransaction ()
       let! res = f (conn, tran) oldEntity newEntity
-      do! tran.CommitAsync (ct) |> Async.AwaitTask
+      do! tran.CommitAsync ct |> Async.AwaitTask
       return res
     }
 
@@ -132,7 +132,7 @@ module Fling =
     (newToDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
@@ -160,7 +160,7 @@ module Fling =
     (toDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
     saveChildWithDifferentOldNew toDto toDto _insertScriptCtor _updateScriptCtor existingSave
 
 
@@ -172,7 +172,7 @@ module Fling =
     (oldToDto: 'rootEntity -> ^childDto)
     (newToDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
       async {
@@ -191,7 +191,7 @@ module Fling =
   let inline saveChildWithoutUpdate
     (toDto: 'rootEntity -> ^childDto)
     (_insertScriptCtor: unit -> ^insertScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>) =
     saveChildWithoutUpdateWithDifferentOldNew toDto toDto _insertScriptCtor existingSave
 
 
@@ -213,7 +213,7 @@ module Fling =
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
@@ -253,7 +253,7 @@ module Fling =
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
     saveOptChildWithDifferentOldNew toDto toDto getId _insertScriptCtor _updateScriptCtor _deleteScriptCtor existingSave
 
@@ -272,7 +272,7 @@ module Fling =
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
@@ -303,7 +303,7 @@ module Fling =
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
     saveOptChildWithoutUpdateWithDifferentOldNew toDto toDto getId _insertScriptCtor _deleteScriptCtor existingSave
 
@@ -326,7 +326,7 @@ module Fling =
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
@@ -366,7 +366,7 @@ module Fling =
     (_insertScriptCtor: unit -> ^insertScript)
     (_updateScriptCtor: unit -> ^updateScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
     saveChildrenWithDifferentOldNew toDtos toDtos getId _insertScriptCtor _updateScriptCtor _deleteScriptCtor existingSave
 
@@ -385,7 +385,7 @@ module Fling =
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
 
     let insert (conn: SqlConnection, tran: SqlTransaction) (rootDto: ^childDto) : Async<unit> =
@@ -416,7 +416,7 @@ module Fling =
     (getId: ^childDto -> 'childDtoId)
     (_insertScriptCtor: unit -> ^insertScript)
     (_deleteScriptCtor: unit -> ^deleteScript)
-    (existingSave: (SqlConnection * SqlTransaction) -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+    (existingSave: SqlConnection * SqlTransaction -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
     =
     saveChildrenWithoutUpdateWithDifferentOldNew toDtos toDtos getId _insertScriptCtor _deleteScriptCtor existingSave
 
