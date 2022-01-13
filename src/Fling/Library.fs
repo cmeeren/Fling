@@ -64,10 +64,10 @@ module Fling =
             let newChildrenById = Dictionary<'childDtoId, 'childDto>()
 
             for dto in oldChildren do
-              oldChildrenById.[getId dto] <- dto
+              oldChildrenById[getId dto] <- dto
 
             for dto in newChildren do
-              newChildrenById.[getId dto] <- dto
+              newChildrenById[getId dto] <- dto
 
             for oldChild in oldChildren do
               let oldChildId = getId oldChild
@@ -341,7 +341,7 @@ module Fling =
           let rootId = getRootId child
 
           match childByRootId.TryGetValue rootId with
-          | false, _ -> childByRootId.[rootId] <- ResizeArray([ child ])
+          | false, _ -> childByRootId[rootId] <- ResizeArray([ child ])
           | true, existingChildren -> existingChildren.Add child
 
         return
