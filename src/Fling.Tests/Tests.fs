@@ -215,7 +215,7 @@ let tests =
               |> runLoader
 
             let sw = Stopwatch.StartNew ()
-            load () () |> Async.RunSynchronously |> ignore
+            load () () |> Async.RunSynchronously
             sw.Stop ()
 
             Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
