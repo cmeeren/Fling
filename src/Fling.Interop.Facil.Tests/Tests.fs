@@ -157,7 +157,7 @@ module FacilMock =
     static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToOne_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
-      ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)
+      ignore (^a: (member Ids: #seq<rootIdList>) dto)
       ChildToOne_GetByRootIds_Executable()
 
 
@@ -224,7 +224,7 @@ module FacilMock =
     static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToOneOpt_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
-      ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)
+      ignore (^a: (member Ids: #seq<rootIdList>) dto)
       ChildToOneOpt_GetByRootIds_Executable()
 
 
@@ -294,7 +294,7 @@ module FacilMock =
     static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_GetByRootIds()
     member _.WithParameters(_ids: seq<rootIdList>) = ChildToMany_GetByRootIds_Executable()
     member inline _.WithParameters(dto: ^a) =
-      ignore (^a: (member ``Ids``: #seq<rootIdList>) dto)
+      ignore (^a: (member Ids: #seq<rootIdList>) dto)
       ChildToMany_GetByRootIds_Executable()
 
 
