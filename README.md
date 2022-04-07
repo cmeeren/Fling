@@ -472,53 +472,6 @@ let save : string -> Order option -> Order -> Async<unit> =
 
 As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s insert/update script.
 
-Ensure consistency by loading in a transaction
-----------------------------------------------
-
-There is a race condition that may occur where data is changed by an unrelated operation during load (i.e., between loading data from different tables). This means that when loading an aggregate, its state may be inconsistent. For example, recall this code from earlier:    
-
-```f#
-let getAllOrders connStr =
-  async {
-    let! orderDtos = dbGetAllOrders connStr
-    return! loadBatch connStr orderDtos
-  }
-```
-
-Imagine that after you call `dbGetAllOrders` and get the order DTOs, but before Fling has loaded data from all tables in `loadBatch`, another operation modifies data for some of the orders that have now been partially read. For the rest of the tables to be loaded, Fling will then load child entity data that is inconsistent with the already loaded data.
-
-The solution is simple: Use a suitable transaction level for the whole loading operation. For example, define the following helper:
-
-```f#
-open System.Transactions
-
-let inNewSnapshotTransactionScope comp =
-  async {
-    use scope =
-      new TransactionScope(
-        TransactionScopeOption.RequiresNew,
-        TransactionOptions(IsolationLevel = IsolationLevel.Snapshot),
-        TransactionScopeAsyncFlowOption.Enabled
-      )
-    let! res = comp
-    scope.Complete()
-    return res
-  }
-```
-
-Then you just pipe your existing code into this:
-
-```f#
-let getAllOrders connStr =
-  async {
-    let! orderDtos = dbGetAllOrders connStr
-    return! loadBatch connStr orderDtos
-  }
-  |> inNewSnapshotTransactionScope
-```
-
-Note that the specific code above requires your database to support snapshot isolation. Use another suitable isolation level if this is not available.
-
 Limitations
 -----------
 
@@ -534,3 +487,4 @@ For maintainers.
 * Update the changelog
 * Update the version in `Fling.fsproj` and/or `Fling.Interop.Facil.fsproj`
 * Commit and push to `master`. If the GitHub build succeeds, the packages are automatically published to NuGet.
+
