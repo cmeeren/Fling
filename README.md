@@ -479,6 +479,10 @@ Limitations
 
 It’s not possible to interleave inserts/updates/deletes for different tables. For example, you can’t specify that Fling should *insert* first into table A and then into table B while at the same time  *delete* from table A and then from table B. The ordering of operations can only be specified at the table (or “child”) level; all inserts/updates/deletes for a table is performed before the next table. This may have implications for foreign key constraints in complex aggregates.
 
+### Transactional consistency on load can not be 100% guaranteed
+
+Fling fetches child entities in parallel. I have not found a way to use transactions with parallel commands/connections. This means that it is not possible to guarantee a transactionally consistent view of the whole aggregate. Specifically, it is theoretically possible that Facil loads data from some tables, then another operation changes the data, and then Facil continues to load the now updated data from the rest of the tables. Only you know if this will pose a problem for you. I have not had problems with it. You may be able to avoid it with locking.
+
 ## Deployment checklist
 
 For maintainers.
@@ -487,4 +491,3 @@ For maintainers.
 * Update the changelog
 * Update the version in `Fling.fsproj` and/or `Fling.Interop.Facil.fsproj`
 * Commit and push to `master`. If the GitHub build succeeds, the packages are automatically published to NuGet.
-
