@@ -15,7 +15,7 @@
     <!-- TODO: Create and add logo -->
     <!--<PackageIcon>fling-logo-128x128.png</PackageIcon>-->
     <PackageReleaseNotes>https://github.com/cmeeren/Fling/blob/master/RELEASE_NOTES_Fling.Interop.Facil.md</PackageReleaseNotes>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.0" />
     <PackageReference Update="FSharp.Core" Version="6.0.0" />
   </ItemGroup>
 
