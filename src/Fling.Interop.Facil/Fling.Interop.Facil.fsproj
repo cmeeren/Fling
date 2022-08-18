@@ -16,15 +16,6 @@
     <!--<PackageIcon>fling-logo-128x128.png</PackageIcon>-->
     <PackageReleaseNotes>https://github.com/cmeeren/Fling/blob/master/RELEASE_NOTES_Fling.Interop.Facil.md</PackageReleaseNotes>
     <Version>0.2.2</Version>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
