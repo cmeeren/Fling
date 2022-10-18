@@ -455,7 +455,7 @@
       "fling": {
         "type": "Project",
         "dependencies": {
-          "FSharp.Core": "6.0.0"
+          "FSharp.Core": "[6.0.0, )"
         }
       }
     }
