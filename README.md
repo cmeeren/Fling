@@ -5,8 +5,8 @@ Fling
 
 Fling works with your existing (simple, per-table) get/insert/update/delete data access code, and enhances it with minimal boilerplate:
 
-* When loading, Fling fetches child entities in parallel and supports batch loading child entitites for multiple parent entities
-* When saving, Fling only inserts/updates/deletes changed rows
+* When loading, Fling fetches child entities in parallel and supports batch loading child entities for multiple parent entities.
+* When saving, Fling only inserts/updates/deletes changed rows.
 
 Fling is completely database agnostic.
 
