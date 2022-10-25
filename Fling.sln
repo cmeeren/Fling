@@ -22,14 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{20E566C8
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fling.Interop.Facil.Tests", "src\Fling.Interop.Facil.Tests\Fling.Interop.Facil.Tests.fsproj", "{C4302035-D012-4D86-AD71-DA252AA12ACC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{B2FFDD0D-2432-4143-A2A0-0CD9FD5B9ED6}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F10B96FF-BC04-4A99-97AB-8EA08E1CA780}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\master.yml = .github\workflows\master.yml
-		.github\workflows\pull_request.yml = .github\workflows\pull_request.yml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,8 +51,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{B77F4A0A-43FB-44DE-9D87-F5BF04641207} = {20E566C8-77F2-499A-834A-BC6117408DE0}
 		{C4302035-D012-4D86-AD71-DA252AA12ACC} = {20E566C8-77F2-499A-834A-BC6117408DE0}
-		{B2FFDD0D-2432-4143-A2A0-0CD9FD5B9ED6} = {226C36F4-B3BD-4DFB-8DEE-31B7999B3B95}
-		{F10B96FF-BC04-4A99-97AB-8EA08E1CA780} = {B2FFDD0D-2432-4143-A2A0-0CD9FD5B9ED6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F42E8740-1DC7-433A-84CE-71C3C412E77C}
