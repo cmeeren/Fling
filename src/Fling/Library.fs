@@ -1,5 +1,7 @@
 ﻿namespace Fling
 
+open System.Transactions
+
 
 module Fling =
 
@@ -260,12 +262,12 @@ module Fling =
 
   type Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg when 'rootDtoId: equality> =
     { GetId: 'rootDto -> 'rootDtoId
-      Load: 'arg -> 'rootDto -> Async<'loadResult> }
+      Load: bool -> 'arg -> 'rootDto -> Async<'loadResult> }
 
 
   type BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg when 'rootDtoId: equality> =
     { GetId: 'rootDto -> 'rootDtoId
-      Load: 'arg -> 'rootDto list -> Async<'loadResult list> }
+      Load: bool -> 'arg -> 'rootDto list -> Async<'loadResult list> }
 
 
   let createLoader
@@ -273,7 +275,7 @@ module Fling =
     (getId: 'rootDto -> 'rootDtoId)
     : Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
     { GetId = getId
-      Load = fun _arg dto -> f dto |> async.Return }
+      Load = fun _loadInParallel _arg dto -> f dto |> async.Return }
 
 
   let createBatchLoader
@@ -281,15 +283,35 @@ module Fling =
     (getId: 'rootDto -> 'rootDtoId)
     : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
     { GetId = getId
-      Load = fun _arg dtos -> dtos |> List.map f |> async.Return }
+      Load = fun _loadInParallel _arg dtos -> dtos |> List.map f |> async.Return }
 
 
-  let runLoader (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
-    loader.Load arg
+  /// Runs the loader without a transaction. Loads child entities in parallel.
+  let loadParallelWithoutTransaction (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
+    loader.Load true arg
 
 
-  let runBatchLoader (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
-    loader.Load arg
+  /// Runs the loader in a TransactionScope with TransactionScopeOption.RequiresNew. Does not load child entities in
+  /// parallel.
+  let loadSerialWithTransaction (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg rootDto : Async<'loadResult> =
+    async {
+      use __ = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled)
+      return! loader.Load false arg rootDto
+    }
+
+
+  /// Runs the loader without a transaction. Loads child entities in parallel.
+  let loadBatchParallelWithoutTransaction (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
+    loader.Load true arg
+
+
+  /// Runs the loader in a TransactionScope with TransactionScopeOption.RequiresNew. Does not load child entities in
+  /// parallel.
+  let loadBatchSerialWithTransaction (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg rootDto : Async<'loadResult list> =
+    async {
+      use __ = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled)
+      return! loader.Load false arg rootDto
+    }
 
 
   let loadChild
@@ -297,15 +319,17 @@ module Fling =
     (loader: Loader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, 'arg>)
     : Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-    let load arg rootDto =
+    let load loadInParallel arg rootDto =
       async {
-        let! loadComp = loader.Load arg rootDto |> Async.StartChild
+        let! loadComp =
+          loader.Load loadInParallel arg rootDto
+          |> if loadInParallel then Async.StartChild else async.Return
 
         let! childComp =
           rootDto
           |> loader.GetId
           |> loadChild arg
-          |> Async.StartChild
+          |> if loadInParallel then Async.StartChild else async.Return
 
         let! load = loadComp
         let! child = childComp
@@ -321,15 +345,17 @@ module Fling =
     (loader: BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, 'arg>)
     : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-    let load arg rootDtos =
+    let load loadInParallel arg rootDtos =
       async {
-        let! loadComp = loader.Load arg rootDtos |> Async.StartChild
+        let! loadComp =
+          loader.Load loadInParallel arg rootDtos
+          |> if loadInParallel then Async.StartChild else async.Return
 
         let! childComp =
           rootDtos
           |> List.map loader.GetId
           |> loadChildren arg
-          |> Async.StartChild
+          |> if loadInParallel then Async.StartChild else async.Return
 
         let! load = loadComp
         let! childBatch = childComp
@@ -364,10 +390,10 @@ module Fling =
     (loader: BatchLoader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, 'arg>)
     : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-    let load : 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
-      fun arg rootDtos ->
+    let load : bool -> 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
+      fun loadInParallel arg rootDtos ->
         async {
-          let! fs = loader.Load arg rootDtos
+          let! fs = loader.Load loadInParallel arg rootDtos
 
           return
             List.zip rootDtos fs
@@ -396,10 +422,10 @@ module Fling =
     (loader: BatchLoader<'rootDto, 'rootDtoId, 'childDto option -> 'loadResult, 'arg>)
     : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-    let load : 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
-      fun arg rootDtos ->
+    let load : bool -> 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
+      fun loadInParallel arg rootDtos ->
         async {
-          let! fs = loader.Load arg rootDtos
+          let! fs = loader.Load loadInParallel arg rootDtos
 
           return
             List.zip rootDtos fs

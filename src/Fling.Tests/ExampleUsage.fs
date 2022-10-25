@@ -293,22 +293,40 @@ module Db =
   module Order =
 
 
-    let private load =
+    let private loadWithoutTransaction =
       createLoader orderFromDbDto (fun x -> x.OrderId)
       |> loadChild getOrderLinesForOrder
       |> loadChild getAssociatedUsersForOrder
       |> loadChild getCouponForOrder
       |> loadChild getPriceDataForOrder
-      |> runLoader
+      |> loadParallelWithoutTransaction
 
 
-    let private loadBatch =
+    let private loadBatchWithoutTransaction =
       createBatchLoader orderFromDbDto (fun x -> x.OrderId)
       |> batchLoadChildren getOrderLinesForOrders (fun x -> x.OrderId)
       |> batchLoadChildren getAssociatedUsersForOrders (fun x -> x.OrderId)
       |> batchLoadOptChild getCouponForOrders (fun x -> x.OrderId)
       |> batchLoadChild getPriceDataForOrders (fun x -> x.OrderId)
-      |> runBatchLoader
+      |> loadBatchParallelWithoutTransaction
+
+
+    let private loadWithTransaction =
+      createLoader orderFromDbDto (fun x -> x.OrderId)
+      |> loadChild getOrderLinesForOrder
+      |> loadChild getAssociatedUsersForOrder
+      |> loadChild getCouponForOrder
+      |> loadChild getPriceDataForOrder
+      |> loadSerialWithTransaction
+
+
+    let private loadBatchWithTransaction =
+      createBatchLoader orderFromDbDto (fun x -> x.OrderId)
+      |> batchLoadChildren getOrderLinesForOrders (fun x -> x.OrderId)
+      |> batchLoadChildren getAssociatedUsersForOrders (fun x -> x.OrderId)
+      |> batchLoadOptChild getCouponForOrders (fun x -> x.OrderId)
+      |> batchLoadChild getPriceDataForOrders (fun x -> x.OrderId)
+      |> loadBatchSerialWithTransaction
 
 
     let private save =
@@ -346,18 +364,35 @@ module Db =
       }
 
 
-    let byId connStr (OrderId oid) =
+    let byIdWithoutTransaction connStr (OrderId oid) =
       async {
         match! getOrderById connStr oid with
         | None -> return None
         | Some orderDto ->
-            let! order = load connStr orderDto
+            let! order = loadWithoutTransaction connStr orderDto
             return Some order
       }
 
 
-    let all connStr =
+    let byIdWithTransaction connStr (OrderId oid) =
+      async {
+        match! getOrderById connStr oid with
+        | None -> return None
+        | Some orderDto ->
+            let! order = loadWithTransaction connStr orderDto
+            return Some order
+      }
+
+
+    let allWithoutTransaction connStr =
       async {
         let! orderDtos = getAllOrders connStr
-        return! loadBatch connStr orderDtos
+        return! loadBatchWithoutTransaction connStr orderDtos
+      }
+
+
+    let allWithTransaction connStr =
+      async {
+        let! orderDtos = getAllOrders connStr
+        return! loadBatchWithTransaction connStr orderDtos
       }

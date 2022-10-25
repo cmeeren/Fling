@@ -3,6 +3,7 @@ Release notes (Fling.Interop.Facil)
 
 ### Unreleased
 
+* Updated for Fling vNext
 * Updated Microsoft.Data.SqlClient from 5.0.0 to 5.0.1
 
 ### 0.2.2 (2022-08-08)

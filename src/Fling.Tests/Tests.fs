@@ -1,6 +1,7 @@
 module Tests
 
 open System.Diagnostics
+open System.Transactions
 open Expecto
 open Hedgehog
 open Fling.Fling
@@ -188,7 +189,7 @@ let tests =
                 |> loadChild getToOneForRoot
                 |> loadChild getToOneOptForRoot
                 |> loadChild getToManyForRoot
-                |> runLoader
+                |> loadParallelWithoutTransaction
 
               let expected = dtosToRoot rootDto toOneDto toOneOptDto toManyDtos
 
@@ -201,7 +202,7 @@ let tests =
             }
 
 
-          testCase "Runs the loaders in parallel" <| fun () ->
+          testCase "Runs the loaders in parallel if using the parallel loader" <| fun () ->
             let getChild _ _ =
               async {
                 do! Async.Sleep 1000
@@ -212,13 +213,63 @@ let tests =
               |> loadChild getChild
               |> loadChild getChild
               |> loadChild getChild
-              |> runLoader
+              |> loadParallelWithoutTransaction
 
             let sw = Stopwatch.StartNew ()
             load () () |> Async.RunSynchronously
             sw.Stop ()
 
             Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+
+
+          testCase "Does not run the loaders in parallel if using the serial loader" <| fun () ->
+            let getChild _ _ =
+              async {
+                do! Async.Sleep 1000
+              }
+
+            let load =
+              createLoader (fun () () () () -> ()) (fun () -> ())
+              |> loadChild getChild
+              |> loadChild getChild
+              |> loadChild getChild
+              |> loadSerialWithTransaction
+
+            let sw = Stopwatch.StartNew ()
+            load () () |> Async.RunSynchronously
+            sw.Stop ()
+
+            Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+
+
+          testCase "Does not run the loaders in a transaction if using loadParallelWithoutTransaction" <| fun () ->
+            let getChild _ _ =
+              async {
+                Expect.isNull Transaction.Current ""
+                return [()]
+              }
+
+            let load =
+              createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+              |> loadChild getChild
+              |> loadParallelWithoutTransaction
+
+            load () () |> Async.RunSynchronously |> ignore
+
+
+          testCase "Runs the loaders in a transaction if using loadSerialWithTransaction" <| fun () ->
+            let getChild _ _ =
+              async {
+                Expect.isNotNull Transaction.Current ""
+                return [()]
+              }
+
+            let load =
+              createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+              |> loadChild getChild
+              |> loadSerialWithTransaction
+
+            load () () |> Async.RunSynchronously |> ignore
 
 
         ]
@@ -265,7 +316,7 @@ let tests =
                 |> batchLoadChild getToOneForRoots (fun dto -> dto.RootId)
                 |> batchLoadOptChild getToOneOptForRoots (fun dto -> dto.RootId)
                 |> batchLoadChildren getToManyForRoots (fun dto -> dto.RootId)
-                |> runBatchLoader
+                |> loadBatchParallelWithoutTransaction
 
               let rootDtos = dtos |> List.map (fun (x, _, _, _) -> x)
               let rootDtoIds = rootDtos |> List.map (fun x -> x.Id)
@@ -284,7 +335,7 @@ let tests =
             }
 
 
-          testCase "Runs the loaders in parallel" <| fun () ->
+          testCase "Runs the loaders in parallel if using the parallel loader" <| fun () ->
             let getChild _ _ =
               async {
                 do! Async.Sleep 1000
@@ -296,13 +347,68 @@ let tests =
               |> batchLoadChild getChild (fun () -> 0)
               |> batchLoadOptChild getChild (fun () -> 0)
               |> batchLoadChildren getChild (fun () -> 0)
-              |> runBatchLoader
+              |> loadBatchParallelWithoutTransaction
 
             let sw = Stopwatch.StartNew ()
             load () [()] |> Async.RunSynchronously |> ignore
             sw.Stop ()
 
             Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+
+
+          testCase "Does not run the loaders in parallel if using the serial loader" <| fun () ->
+            let getChild _ _ =
+              async {
+                do! Async.Sleep 1000
+                return [()]
+              }
+
+            let load =
+              createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+              |> batchLoadChild getChild (fun () -> 0)
+              |> batchLoadOptChild getChild (fun () -> 0)
+              |> batchLoadChildren getChild (fun () -> 0)
+              |> loadBatchSerialWithTransaction
+
+            let sw = Stopwatch.StartNew ()
+            load () [()] |> Async.RunSynchronously |> ignore
+            sw.Stop ()
+
+            Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+
+
+          testCase "Does not run the loaders in a transaction if using runBatchLoader" <| fun () ->
+            let getChild _ _ =
+              async {
+                Expect.isNull Transaction.Current ""
+                return [()]
+              }
+
+            let load =
+              createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+              |> batchLoadChild getChild (fun () -> 0)
+              |> batchLoadOptChild getChild (fun () -> 0)
+              |> batchLoadChildren getChild (fun () -> 0)
+              |> loadBatchParallelWithoutTransaction
+
+            load () [()] |> Async.RunSynchronously |> ignore
+
+
+          testCase "Runs the loaders in a transaction if using loadBatchSerialWithTransaction" <| fun () ->
+            let getChild _ _ =
+              async {
+                Expect.isNotNull Transaction.Current ""
+                return [()]
+              }
+
+            let load =
+              createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+              |> batchLoadChild getChild (fun () -> 0)
+              |> batchLoadOptChild getChild (fun () -> 0)
+              |> batchLoadChildren getChild (fun () -> 0)
+              |> loadBatchSerialWithTransaction
+
+            load () [()] |> Async.RunSynchronously |> ignore
 
 
         ]

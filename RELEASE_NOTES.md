@@ -3,6 +3,13 @@ Release notes
 
 These are the release notes for Fling (the main package). See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for Fling.Interop.Facil.
 
+### Unreleased
+
+* **Breaking:** `runLoader` is renamed to `loadParallelWithoutTransaction`
+* **Breaking:** `runBatchLoader` is renamed to `loadBatchParallelWithoutTransaction`
+* Added `loadSerialWithTransaction`
+* Added `loadBatchSerialWithTransaction`
+
 ### 0.3.0 (2021-10-29)
 
 * Target .NET 6

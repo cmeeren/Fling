@@ -5,7 +5,7 @@ Fling
 
 Fling works with your existing (simple, per-table) get/insert/update/delete data access code, and enhances it with minimal boilerplate:
 
-* When loading, Fling fetches child entities in parallel and supports batch loading child entities for multiple parent entities.
+* When loading, Fling fetches child entities and supports batch loading child entities for multiple parent entities.
 * When saving, Fling only inserts/updates/deletes changed rows.
 
 Fling is completely database agnostic.
@@ -45,14 +45,14 @@ let load : 'arg -> OrderDto -> Async<Order> =
   |> loadChild Db.getOrderLinesForOrder
   |> loadChild Db.getCouponForOrder
   |> loadChild Db.getPriceDataForOrder
-  |> runLoader
+  |> loadSerialWithTransaction
   
 let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
   createBatchLoader Dto.orderToDomain (fun dto -> dto.OrderId)
   |> batchLoadChildren Db.getOrderLinesForOrders (fun dto -> dto.OrderId)
   |> batchLoadOptChild Db.getCouponForOrders (fun dto -> dto.OrderId)
   |> batchLoadChild Db.getPriceDataForOrders (fun dto -> dto.OrderId)
-  |> runBatchLoader
+  |> loadBatchSerialWithTransaction
 ```
 
 Quick start
@@ -271,7 +271,7 @@ Fling now allows you to wire everything together using a declarative syntax.
 
 #### Helper to load a single root entity with all child entities
 
-Given a single root DTO, the function below loads all child entities in parallel and calls your DTO-to-domain function to return the root entity.
+Given a single root DTO, the function below loads all child entities in a transaction and calls your DTO-to-domain function to return the root entity.
 
 ```f#
 open Fling.Fling
@@ -282,12 +282,12 @@ let load : 'arg -> OrderDto -> Async<Order> =
   |> loadChild getAssociatedUsersForOrder
   |> loadChild getCouponForOrder
   |> loadChild getPriceDataForOrder
-  |> runLoader
+  |> loadSerialWithTransaction
 ```
 
 #### Helper to load multiple root entities with all child entities
 
-Given multiple root DTOs, the function below loads all child entities for all the root entities in parallel and calls your DTO-to-domain function to return the root entities.
+Given multiple root DTOs, the function below loads all child entities for all the root entities and calls your DTO-to-domain function to return the root entities.
 
 In all of the calls below, you specify a function to get the root ID given the child ID. Fling uses this to know which child entities belong to which roots.
 
@@ -300,7 +300,7 @@ let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
   |> batchLoadChildren getAssociatedUsersForOrders (fun dto -> dto.OrderId)
   |> batchLoadOptChild getCouponForOrders (fun dto -> dto.OrderId)
   |> batchLoadChild getPriceDataForOrders (fun dto -> dto.OrderId)
-  |> runBatchLoader
+  |> loadBatchSerialWithTransaction
 ```
 
 #### Helper to save a root entity and all child entities
@@ -414,7 +414,7 @@ let load : string -> OrderDto -> Async<Order> =
   |> loadChildren OrderAssociatedUser_ByOrderId
   |> loadOptChild OrderCoupon_ByOrderId
   |> loadChild OrderPriceData_ByOrderId
-  |> runLoader
+  |> loadSerialWithTransaction
 ```
 
 For batch loading:
@@ -428,7 +428,7 @@ let loadBatch : string -> OrderDto list -> Async<Order list> =
   |> batchLoadChildren OrderAssociatedUser_ByOrderIds (fun dto -> dto.OrderId)
   |> batchLoadOptChild OrderCoupon_ByOrderIds (fun dto -> dto.OrderId)
   |> batchLoadChild OrderPriceData_ByOrderIds (fun dto -> dto.OrderId)
-  |> runBatchLoader
+  |> loadBatchSerialWithTransaction
 ```
 
 For saving:

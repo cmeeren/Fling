@@ -311,7 +311,7 @@ module UsageCompileTimeTests =
     |> loadChild ChildToOne_GetByRootId
     |> loadOptChild ChildToOneOpt_GetByRootId
     |> loadChildren ChildToMany_GetByRootId
-    |> runLoader
+    |> loadParallelWithoutTransaction
 
 
   let loadBatch : string -> RootDto list -> Async<Root list> =
@@ -319,7 +319,7 @@ module UsageCompileTimeTests =
     |> batchLoadChild ChildToOne_GetByRootIds (fun dto -> dto.RootId)
     |> batchLoadOptChild ChildToOneOpt_GetByRootIds (fun dto -> dto.RootId)
     |> batchLoadChildren ChildToMany_GetByRootIds (fun dto -> dto.RootId)
-    |> runBatchLoader
+    |> loadBatchParallelWithoutTransaction
 
 
   let save : string -> Root option -> Root -> Async<unit> =
