@@ -1,21 +1,25 @@
 Fling
 ================
 
-**Fling significantly reduces boilerplate needed to efficiently save/load complex domain entities to/from multiple tables.**
+**Fling significantly reduces boilerplate needed to efficiently save/load complex domain entities to/from multiple
+tables.**
 
-Fling works with your existing (simple, per-table) get/insert/update/delete data access code, and enhances it with minimal boilerplate:
+Fling works with your existing (simple, per-table) get/insert/update/delete data access code, and enhances it with
+minimal boilerplate:
 
 * When loading, Fling fetches child entities and supports batch loading child entities for multiple parent entities.
 * When saving, Fling only inserts/updates/deletes changed rows.
 
 Fling is completely database agnostic.
 
-If you use SQL Server, Fling synergizes very well with [Facil](https://github.com/cmeeren/Facil), which can fully generate the data access code that Fling can use. However, Fling is just as useful without it.
+If you use SQL Server, Fling synergizes very well with [Facil](https://github.com/cmeeren/Facil), which can fully
+generate the data access code that Fling can use. However, Fling is just as useful without it.
 
 What does it look like?
 -----------------------
 
-Given data access code, DTO types and functions to convert between domain and DTO types, Fling allows you to write these three helpers for efficiently saving/loading complex domain entities as described above:
+Given data access code, DTO types and functions to convert between domain and DTO types, Fling allows you to write these
+three helpers for efficiently saving/loading complex domain entities as described above:
 
 ```f#
 open Fling.Fling
@@ -39,14 +43,14 @@ let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
        Db.orderToPriceDataDto
        Db.insertPriceData
        Db.updatePriceData
-       
+
 let load : 'arg -> OrderDto -> Async<Order> =
   createLoader Dto.orderToDomain (fun dto -> dto.OrderId)
   |> loadChild Db.getOrderLinesForOrder
   |> loadChild Db.getCouponForOrder
   |> loadChild Db.getPriceDataForOrder
   |> loadSerialWithTransaction
-  
+
 let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
   createBatchLoader Dto.orderToDomain (fun dto -> dto.OrderId)
   |> batchLoadChildren Db.getOrderLinesForOrders (fun dto -> dto.OrderId)
@@ -96,19 +100,21 @@ type Order =
 
 [Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
 
-For demonstration purposes, we store the Order aggregate in five tables: One for the top-level order data, one for the order line data (each order can have 0..N lines), one for the associated users (0..N), one for the coupon used on the order (0..1), and one for the price data (1-to-1).
+For demonstration purposes, we store the Order aggregate in five tables: One for the top-level order data, one for the
+order line data (each order can have 0..N lines), one for the associated users (0..N), one for the coupon used on the
+order (0..1), and one for the price data (1-to-1).
 
 ```f#
-type OrderDto = 
+type OrderDto =
   { OrderId: int
     OrderNumber: string }
-      
+
 type OrderLineDto =
   { OrderId: int
     OrderLineId: int
     ProductName: string }
 
-type OrderAssociatedUserDto = 
+type OrderAssociatedUserDto =
   { OrderId: int
     UserId: int }
 
@@ -117,14 +123,15 @@ type OrderCouponDto =
     Code: string
     Expiration: DateTimeOffset }
 
-type OrderPriceDataDto = 
+type OrderPriceDataDto =
   { OrderId: int
     NetPrice: decimal }
 ```
 
 ### 4. Write the functions to convert between the domain entities and DTOs
 
-For saving, you need one function for each of the DTO types that accepts the aggregate root (`Order`) and returns the DTO(s).
+For saving, you need one function for each of the DTO types that accepts the aggregate root (`Order`) and returns the
+DTO(s).
 
 ```f#
 let orderToDto (order: Order) : OrderDto =
@@ -158,11 +165,16 @@ let orderFromDtos
 
 ### 4. Write the individual get/insert/update/delete DB functions for each table
 
-[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server. If you use Facil, it is highly recommended you also install Fling.Interop.Facil and see [the instructions later in the readme](#flinginteropfacil).
+[Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server. If you use Facil, it is
+highly recommended you also install Fling.Interop.Facil and
+see [the instructions later in the readme](#flinginteropfacil).
 
-Note that all of these functions accept `'arg` as their first argument. This can be anything, but will typically be a connection string, a connection object, or tuple containing a connection and a transaction. (Just use `()` if you don’t need it.)
+Note that all of these functions accept `'arg` as their first argument. This can be anything, but will typically be a
+connection string, a connection object, or tuple containing a connection and a transaction. (Just use `()` if you don’t
+need it.)
 
-For non-batch loading, you need functions that accept the root ID (the order ID in our case) and return the DTO(s) that belong to the root:
+For non-batch loading, you need functions that accept the root ID (the order ID in our case) and return the DTO(s) that
+belong to the root:
 
 ```f#
 let getOrderLinesForOrder
@@ -218,11 +230,15 @@ let getPriceDataForOrders
   failwith ""
 ```
 
-For saving, you need functions to insert/update the root DTO and all (non-optional) to-one child DTOs, and you need functions to insert/update/delete all to-many or optional to-one child DTOs. You typically want to run all of these in a transaction, so for the `'arg` will typically contain a connection/transaction.
+For saving, you need functions to insert/update the root DTO and all (non-optional) to-one child DTOs, and you need
+functions to insert/update/delete all to-many or optional to-one child DTOs. You typically want to run all of these in a
+transaction, so for the `'arg` will typically contain a connection/transaction.
 
-You can, if you want, use an “upsert” function instead of insert/update. If you do, just pass this function as both the insert and update function in the next step.
+You can, if you want, use an “upsert” function instead of insert/update. If you do, just pass this function as both the
+insert and update function in the next step.
 
-The “insert root” and “update root” functions may return `Async<'a>` (e.g. for returning a generated ID), and must both return the same type. All child entity insert/update/delete functions must return `Async<unit>`.
+The “insert root” and “update root” functions may return `Async<'a>` (e.g. for returning a generated ID), and must both
+return the same type. All child entity insert/update/delete functions must return `Async<unit>`.
 
 ```f#
 let insertOrder conn (dto: OrderDto) : Async<unit> =
@@ -271,7 +287,8 @@ Fling now allows you to wire everything together using a declarative syntax.
 
 #### Helper to load a single root entity with all child entities
 
-Given a single root DTO, the function below loads all child entities in a transaction and calls your DTO-to-domain function to return the root entity.
+Given a single root DTO, the function below loads all child entities in a transaction and calls your DTO-to-domain
+function to return the root entity.
 
 ```f#
 open Fling.Fling
@@ -287,9 +304,11 @@ let load : 'arg -> OrderDto -> Async<Order> =
 
 #### Helper to load multiple root entities with all child entities
 
-Given multiple root DTOs, the function below loads all child entities for all the root entities and calls your DTO-to-domain function to return the root entities.
+Given multiple root DTOs, the function below loads all child entities for all the root entities and calls your
+DTO-to-domain function to return the root entities.
 
-In all of the calls below, you specify a function to get the root ID given the child ID. Fling uses this to know which child entities belong to which roots.
+In all of the calls below, you specify a function to get the root ID given the child ID. Fling uses this to know which
+child entities belong to which roots.
 
 ```f#
 open Fling.Fling
@@ -305,11 +324,16 @@ let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
 
 #### Helper to save a root entity and all child entities
 
-Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this helper performs the necessary inserts/updates/deletes. It skips updating identical records (compared using `=`).
+Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this
+helper performs the necessary inserts/updates/deletes. It skips updating identical records (compared using `=`).
 
-Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each new child is either inserted or updated (or skipped if it’s equal).
+Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each
+new child is either inserted or updated (or skipped if it’s equal).
 
-For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of the DTO. This will be passed to the `delete` function if the entity needs to be deleted, and is used for to-many children to know which child entities to compare, delete, and insert. Though these are trivial, bugs can sneak in here – [Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
+For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of
+the DTO. This will be passed to the `delete` function if the entity needs to be deleted, and is used for to-many
+children to know which child entities to compare, delete, and insert. Though these are trivial, bugs can sneak in
+here – [Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server.
 
 ```f#
 open Fling.Fling
@@ -340,9 +364,14 @@ let save : 'arg -> Order option -> Order -> Async<unit> =
        updatePriceData
 ```
 
-Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain aggregate. If you supply `None` while updating, all entities will be inserted, which at best will fail with a primary key violation if the entity exists, or at worst will leave old child entities that should have been deleted still present in your database, causing the next load to return invalid data.
+Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain
+aggregate. If you supply `None` while updating, all entities will be inserted, which at best will fail with a primary
+key violation if the entity exists, or at worst will leave old child entities that should have been deleted still
+present in your database, causing the next load to return invalid data.
 
-If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. You then get `Async<'a option>` instead of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
+If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. You then get `Async<'a option>` instead
+of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was
+inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
 ### 6. Call the helpers and profit
 
@@ -374,25 +403,31 @@ let getAllOrders connStr =
   }
 ```
 
-
 Production readiness
 --------------------
 
 Fling is production ready.
 
-Fling is fairly well tested and is used in several mission-critical production services at our company. I’m not claiming it’s perfect, or even bug-free, but I have a vested interest in keeping it working properly.
+Fling is fairly well tested and is used in several mission-critical production services at our company. I’m not claiming
+it’s perfect, or even bug-free, but I have a vested interest in keeping it working properly.
 
-It’s still at 0.x because it's still new and I may still be discovering improvements that require breaking changes every now and then. However, do not take 0.x to mean that it’s a buggy mess, or that the API will radically change every other week. Breaking changes will cause a lot of churn for me, too.
+It’s still at 0.x because it's still new and I may still be discovering improvements that require breaking changes every
+now and then. However, do not take 0.x to mean that it’s a buggy mess, or that the API will radically change every other
+week. Breaking changes will cause a lot of churn for me, too.
 
 
 Fling.Interop.Facil
 -------------------
 
-Fling.Interop.Facil uses [ugly SRTP code](https://github.com/cmeeren/Fling/blob/master/src/Fling.Interop.Facil/Library.fs) to entirely remove the boilerplate needed to use Fling with the data access code generated by Facil.
+Fling.Interop.Facil
+uses [ugly SRTP code](https://github.com/cmeeren/Fling/blob/master/src/Fling.Interop.Facil/Library.fs) to entirely
+remove the boilerplate needed to use Fling with the data access code generated by Facil.
 
 Fling.Interop.Facil works with code generated by Facil >= 1.1.0.
 
-To use it, install Fling.Interop.Facil from [NuGet](https://www.nuget.org/packages/Fling.Interop.Facil) and `open Fling.Interop.Facil.Fling` after `open Fling.Fling`, then use the Facil script/procedure types instead of DB functions in all Fling functions.
+To use it, install Fling.Interop.Facil from [NuGet](https://www.nuget.org/packages/Fling.Interop.Facil)
+and `open Fling.Interop.Facil.Fling` after `open Fling.Fling`, then use the Facil script/procedure types instead of DB
+functions in all Fling functions.
 
 ```f#
 open Fling.Fling
@@ -401,7 +436,8 @@ open Fling.Interop.Facil.Fling
 
 For (non-batch) loading:
 
-* Unlike Fling, you have to use `loadChild`, `loadOptChild`, or `loadChildren` depending on the cardinality of the relationship (in Fling, `loadChild` serves all three).
+* Unlike Fling, you have to use `loadChild`, `loadOptChild`, or `loadChildren` depending on the cardinality of the
+  relationship (in Fling, `loadChild` serves all three).
 * `'arg` is locked to `string`, i.e. a connection string
 
 ```f#
@@ -462,7 +498,9 @@ let save : (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<un
        OrderPriceData_Update
 ```
 
-Use `withTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string) and run the whole save in a transaction. This is useful if you don’t need to run the save in a transaction with anything else:
+Use `withTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string) and
+run the whole save in a transaction. This is useful if you don’t need to run the save in a transaction with anything
+else:
 
 ```f#
 let save : string -> Order option -> Order -> Async<unit> =
@@ -470,18 +508,27 @@ let save : string -> Order option -> Order -> Async<unit> =
   |> withTransactionFromConnStr
 ```
 
-As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s insert/update script.
+As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s
+insert/update script.
 
 Limitations
 -----------
 
 ### Cannot interleave inserts/updates/deletes for different tables
 
-It’s not possible to interleave inserts/updates/deletes for different tables. For example, you can’t specify that Fling should *insert* first into table A and then into table B while at the same time  *delete* from table A and then from table B. The ordering of operations can only be specified at the table (or “child”) level; all inserts/updates/deletes for a table is performed before the next table. This may have implications for foreign key constraints in complex aggregates.
+It’s not possible to interleave inserts/updates/deletes for different tables. For example, you can’t specify that Fling
+should *insert* first into table A and then into table B while at the same time  *delete* from table A and then from
+table B. The ordering of operations can only be specified at the table (or “child”) level; all inserts/updates/deletes
+for a table is performed before the next table. This may have implications for foreign key constraints in complex
+aggregates.
 
 ### Transactional consistency on load can not be 100% guaranteed
 
-Fling fetches child entities in parallel. I have not found a way to use transactions with parallel commands/connections. This means that it is not possible to guarantee a transactionally consistent view of the whole aggregate. Specifically, it is theoretically possible that Facil loads data from some tables, then another operation changes the data, and then Facil continues to load the now updated data from the rest of the tables. Only you know if this will pose a problem for you. I have not had problems with it. You may be able to avoid it with locking.
+Fling fetches child entities in parallel. I have not found a way to use transactions with parallel commands/connections.
+This means that it is not possible to guarantee a transactionally consistent view of the whole aggregate. Specifically,
+it is theoretically possible that Facil loads data from some tables, then another operation changes the data, and then
+Facil continues to load the now updated data from the rest of the tables. Only you know if this will pose a problem for
+you. I have not had problems with it. You may be able to avoid it with locking.
 
 ## Deployment checklist
 
