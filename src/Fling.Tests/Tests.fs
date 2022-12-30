@@ -322,46 +322,50 @@ let tests =
                 }
 
 
-            testCase "Runs the loaders in parallel if using the parallel loader"
-            <| fun () ->
-                let getChild _ _ = async {
-                    do! Async.Sleep 1000
-                    return [ () ]
-                }
+            testSequenced (
+                testCase "Runs the loaders in parallel if using the parallel loader"
+                <| fun () ->
+                    let getChild _ _ = async {
+                        do! Async.Sleep 1000
+                        return [ () ]
+                    }
 
-                let load =
-                    createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> batchLoadChild getChild (fun () -> 0)
-                    |> batchLoadOptChild getChild (fun () -> 0)
-                    |> batchLoadChildren getChild (fun () -> 0)
-                    |> loadBatchParallelWithoutTransaction
+                    let load =
+                        createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+                        |> batchLoadChild getChild (fun () -> 0)
+                        |> batchLoadOptChild getChild (fun () -> 0)
+                        |> batchLoadChildren getChild (fun () -> 0)
+                        |> loadBatchParallelWithoutTransaction
 
-                let sw = Stopwatch.StartNew()
-                load () [ () ] |> Async.RunSynchronously |> ignore
-                sw.Stop()
+                    let sw = Stopwatch.StartNew()
+                    load () [ () ] |> Async.RunSynchronously |> ignore
+                    sw.Stop()
 
-                Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+                    Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+            )
 
 
-            testCase "Does not run the loaders in parallel if using the serial loader"
-            <| fun () ->
-                let getChild _ _ = async {
-                    do! Async.Sleep 1000
-                    return [ () ]
-                }
+            testSequenced (
+                testCase "Does not run the loaders in parallel if using the serial loader"
+                <| fun () ->
+                    let getChild _ _ = async {
+                        do! Async.Sleep 1000
+                        return [ () ]
+                    }
 
-                let load =
-                    createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> batchLoadChild getChild (fun () -> 0)
-                    |> batchLoadOptChild getChild (fun () -> 0)
-                    |> batchLoadChildren getChild (fun () -> 0)
-                    |> loadBatchSerialWithTransaction
+                    let load =
+                        createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
+                        |> batchLoadChild getChild (fun () -> 0)
+                        |> batchLoadOptChild getChild (fun () -> 0)
+                        |> batchLoadChildren getChild (fun () -> 0)
+                        |> loadBatchSerialWithTransaction
 
-                let sw = Stopwatch.StartNew()
-                load () [ () ] |> Async.RunSynchronously |> ignore
-                sw.Stop()
+                    let sw = Stopwatch.StartNew()
+                    load () [ () ] |> Async.RunSynchronously |> ignore
+                    sw.Stop()
 
-                Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+                    Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+            )
 
 
             testCase "Does not run the loaders in a transaction if using runBatchLoader"
