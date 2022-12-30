@@ -192,40 +192,44 @@ let tests =
                 }
 
 
-            testCase "Runs the loaders in parallel if using the parallel loader"
-            <| fun () ->
-                let getChild _ _ = async { do! Async.Sleep 1000 }
+            testSequenced (
+                testCase "Runs the loaders in parallel if using the parallel loader"
+                <| fun () ->
+                    let getChild _ _ = async { do! Async.Sleep 1000 }
 
-                let load =
-                    createLoader (fun () () () () -> ()) (fun () -> ())
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadParallelWithoutTransaction
+                    let load =
+                        createLoader (fun () () () () -> ()) (fun () -> ())
+                        |> loadChild getChild
+                        |> loadChild getChild
+                        |> loadChild getChild
+                        |> loadParallelWithoutTransaction
 
-                let sw = Stopwatch.StartNew()
-                load () () |> Async.RunSynchronously
-                sw.Stop()
+                    let sw = Stopwatch.StartNew()
+                    load () () |> Async.RunSynchronously
+                    sw.Stop()
 
-                Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+                    Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
+            )
 
 
-            testCase "Does not run the loaders in parallel if using the serial loader"
-            <| fun () ->
-                let getChild _ _ = async { do! Async.Sleep 1000 }
+            testSequenced (
+                testCase "Does not run the loaders in parallel if using the serial loader"
+                <| fun () ->
+                    let getChild _ _ = async { do! Async.Sleep 1000 }
 
-                let load =
-                    createLoader (fun () () () () -> ()) (fun () -> ())
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadSerialWithTransaction
+                    let load =
+                        createLoader (fun () () () () -> ()) (fun () -> ())
+                        |> loadChild getChild
+                        |> loadChild getChild
+                        |> loadChild getChild
+                        |> loadSerialWithTransaction
 
-                let sw = Stopwatch.StartNew()
-                load () () |> Async.RunSynchronously
-                sw.Stop()
+                    let sw = Stopwatch.StartNew()
+                    load () () |> Async.RunSynchronously
+                    sw.Stop()
 
-                Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+                    Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+            )
 
 
             testCase "Does not run the loaders in a transaction if using loadParallelWithoutTransaction"
