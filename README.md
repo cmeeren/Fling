@@ -25,38 +25,30 @@ three helpers for efficiently saving/loading complex domain entities as describe
 open Fling.Fling
 
 // 'Order option' is the old order (None for initial insert)
-let save : 'arg -> Order option -> Order -> Async<'saveResult option> =
-  saveRoot orderToDbDto insertOrder updateOrder
-  |> saveChildren
-       orderToLineDtos
-       (fun dto -> dto.OrderLineId)
-       Db.insertOrderLine
-       Db.updateOrderLine
-       Db.deleteOrderLine
-  |> saveOptChild
-       orderToCouponDto
-       (fun dto -> dto.OrderId)
-       Db.insertCoupon
-       Db.updateCoupon
-       Db.deleteCoupon
-  |> saveChild
-       Db.orderToPriceDataDto
-       Db.insertPriceData
-       Db.updatePriceData
+let save: 'arg -> Order option -> Order -> Async<'saveResult option> =
+    saveRoot orderToDbDto insertOrder updateOrder
+    |> saveChildren
+        orderToLineDtos
+        (fun dto -> dto.OrderLineId)
+        Db.insertOrderLine
+        Db.updateOrderLine
+        Db.deleteOrderLine
+    |> saveOptChild orderToCouponDto (fun dto -> dto.OrderId) Db.insertCoupon Db.updateCoupon Db.deleteCoupon
+    |> saveChild Db.orderToPriceDataDto Db.insertPriceData Db.updatePriceData
 
-let load : 'arg -> OrderDto -> Async<Order> =
-  createLoader Dto.orderToDomain (fun dto -> dto.OrderId)
-  |> loadChild Db.getOrderLinesForOrder
-  |> loadChild Db.getCouponForOrder
-  |> loadChild Db.getPriceDataForOrder
-  |> loadSerialWithTransaction
+let load: 'arg -> OrderDto -> Async<Order> =
+    createLoader Dto.orderToDomain (fun dto -> dto.OrderId)
+    |> loadChild Db.getOrderLinesForOrder
+    |> loadChild Db.getCouponForOrder
+    |> loadChild Db.getPriceDataForOrder
+    |> loadSerialWithTransaction
 
-let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
-  createBatchLoader Dto.orderToDomain (fun dto -> dto.OrderId)
-  |> batchLoadChildren Db.getOrderLinesForOrders (fun dto -> dto.OrderId)
-  |> batchLoadOptChild Db.getCouponForOrders (fun dto -> dto.OrderId)
-  |> batchLoadChild Db.getPriceDataForOrders (fun dto -> dto.OrderId)
-  |> loadBatchSerialWithTransaction
+let loadBatch: 'arg -> OrderDto list -> Async<Order list> =
+    createBatchLoader Dto.orderToDomain (fun dto -> dto.OrderId)
+    |> batchLoadChildren Db.getOrderLinesForOrders (fun dto -> dto.OrderId)
+    |> batchLoadOptChild Db.getCouponForOrders (fun dto -> dto.OrderId)
+    |> batchLoadChild Db.getPriceDataForOrders (fun dto -> dto.OrderId)
+    |> loadBatchSerialWithTransaction
 ```
 
 Quick start
@@ -77,23 +69,23 @@ type OrderLineId = OrderLineId of int
 
 type OrderId = OrderId of int
 
-type OrderLine =
-  { Id: OrderLineId
-    ProductName: string }
+type OrderLine = { Id: OrderLineId; ProductName: string }
 
-type Coupon =
-  { Code: string
-    Expiration: DateTimeOffset }
+type Coupon = {
+    Code: string
+    Expiration: DateTimeOffset
+}
 
 type PriceData = { NetPrice: decimal }
 
-type Order =
-  { Id: OrderId
+type Order = {
+    Id: OrderId
     OrderNumber: string
     Lines: OrderLine list
     AssociatedUsers: Set<UserId>
     Coupon: Coupon option
-    PriceData: PriceData }
+    PriceData: PriceData
+}
 ```
 
 ### 3. Write DTO types corresponding to the database tables
@@ -105,27 +97,23 @@ order line data (each order can have 0..N lines), one for the associated users (
 order (0..1), and one for the price data (1-to-1).
 
 ```f#
-type OrderDto =
-  { OrderId: int
-    OrderNumber: string }
+type OrderDto = { OrderId: int; OrderNumber: string }
 
-type OrderLineDto =
-  { OrderId: int
+type OrderLineDto = {
+    OrderId: int
     OrderLineId: int
-    ProductName: string }
+    ProductName: string
+}
 
-type OrderAssociatedUserDto =
-  { OrderId: int
-    UserId: int }
+type OrderAssociatedUserDto = { OrderId: int; UserId: int }
 
-type OrderCouponDto =
-  { OrderId: int
+type OrderCouponDto = {
+    OrderId: int
     Code: string
-    Expiration: DateTimeOffset }
+    Expiration: DateTimeOffset
+}
 
-type OrderPriceDataDto =
-  { OrderId: int
-    NetPrice: decimal }
+type OrderPriceDataDto = { OrderId: int; NetPrice: decimal }
 ```
 
 ### 4. Write the functions to convert between the domain entities and DTOs
@@ -135,32 +123,33 @@ DTO(s).
 
 ```f#
 let orderToDto (order: Order) : OrderDto =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let orderToLineDtos (order: Order) : OrderLineDto list =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let orderToAssociatedUserDtos (order: Order) : OrderAssociatedUserDto list =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let orderToCouponDto (order: Order) : OrderCouponDto option =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let orderToPriceDataDto (order: Order) : OrderPriceDataDto =
-  failwith "Your code here"
+    failwith "Your code here"
+
 ```
 
 For loading, then you need one function that accepts all relevant DTOs and produce your domain object.
 
 ```f#
 let orderFromDtos
-  (dto: OrderDto)
-  (lines: OrderLineDto list)
-  (users: OrderAssociatedUserDto list)
-  (coupon: OrderCouponDto option)
-  (price: OrderPriceDataDto)
-  : Order =
-  failwith "Your code here"
+    (dto: OrderDto)
+    (lines: OrderLineDto list)
+    (users: OrderAssociatedUserDto list)
+    (coupon: OrderCouponDto option)
+    (price: OrderPriceDataDto)
+    : Order =
+    failwith "Your code here"
 ```
 
 ### 4. Write the individual get/insert/update/delete DB functions for each table
@@ -177,57 +166,34 @@ For non-batch loading, you need functions that accept the root ID (the order ID 
 belong to the root:
 
 ```f#
-let getOrderLinesForOrder
-  (connStr: string)
-  (orderId: int)
-  : Async<Dtos.OrderLineDto list> =
-  failwith "Your code here"
+let getOrderLinesForOrder (connStr: string) (orderId: int) : Async<Dtos.OrderLineDto list> =
+    failwith "Your code here"
 
-let getAssociatedUsersForOrder
-  (connStr: string)
-  (orderId: int)
-  : Async<Dtos.OrderAssociatedUserDto list> =
-  failwith "Your code here"
+let getAssociatedUsersForOrder (connStr: string) (orderId: int) : Async<Dtos.OrderAssociatedUserDto list> =
+    failwith "Your code here"
 
-let getCouponForOrder
-  (connStr: string)
-  (orderId: int)
-  : Async<Dtos.OrderCouponDto option> =
-  failwith "Your code here"
+let getCouponForOrder (connStr: string) (orderId: int) : Async<Dtos.OrderCouponDto option> =
+    failwith "Your code here"
 
-let getPriceDataForOrder
-  (connStr: string)
-  (orderId: int)
-  : Async<Dtos.OrderPriceDataDto> =
-  failwith "Your code here"
+let getPriceDataForOrder (connStr: string) (orderId: int) : Async<Dtos.OrderPriceDataDto> =
+    failwith "Your code here"
+
 ```
 
 For batch loading, you need functions that accept a list of root IDs and returns all DTOs that belong to those roots:
 
 ```f#
-let getOrderLinesForOrders
-  (connStr: string)
-  (orderIds: int list)
-  : Async<Dtos.OrderLineDto list> =
-  failwith ""
+let getOrderLinesForOrders (connStr: string) (orderIds: int list) : Async<Dtos.OrderLineDto list> =
+    failwith ""
 
-let getAssociatedUsersForOrders
-  (connStr: string)
-  (orderIds: int list)
-  : Async<Dtos.OrderAssociatedUserDto list> =
-  failwith ""
+let getAssociatedUsersForOrders (connStr: string) (orderIds: int list) : Async<Dtos.OrderAssociatedUserDto list> =
+    failwith ""
 
-let getCouponForOrders
-  (connStr: string)
-  (orderIds: int list)
-  : Async<Dtos.OrderCouponDto list> =
-  failwith ""
+let getCouponForOrders (connStr: string) (orderIds: int list) : Async<Dtos.OrderCouponDto list> =
+    failwith ""
 
-let getPriceDataForOrders
-  (connStr: string)
-  (orderIds: int list)
-  : Async<Dtos.OrderPriceDataDto list> =
-  failwith ""
+let getPriceDataForOrders (connStr: string) (orderIds: int list) : Async<Dtos.OrderPriceDataDto list> =
+    failwith ""
 ```
 
 For saving, you need functions to insert/update the root DTO and all (non-optional) to-one child DTOs, and you need
@@ -242,43 +208,43 @@ return the same type. All child entity insert/update/delete functions must retur
 
 ```f#
 let insertOrder conn (dto: OrderDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let updateOrder conn (dto: OrderDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let insertOrderLine conn (dto: OrderLineDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let updateOrderLine conn (dto: OrderLineDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let deleteOrderLine conn (orderLineId: int) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let insertOrderAssociatedUser conn (dto: OrderAssociatedUserDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let updateOrderAssociatedUser conn (dto: OrderAssociatedUserDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let deleteOrderAssociatedUser conn (orderId: int, userId: int) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let insertCoupon conn (dto: OrderCouponDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let updateCoupon conn (dto: OrderCouponDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let deleteCoupon conn (orderId: int) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let insertPriceData conn (dto: OrderPriceDataDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 
 let updatePriceData conn (dto: OrderPriceDataDto) : Async<unit> =
-  failwith "Your code here"
+    failwith "Your code here"
 ```
 
 ### 5. Wire everything together with Fling
@@ -293,13 +259,13 @@ function to return the root entity.
 ```f#
 open Fling.Fling
 
-let load : 'arg -> OrderDto -> Async<Order> =
-  createLoader orderFromDtos (fun dto -> dto.OrderId)
-  |> loadChild getOrderLinesForOrder
-  |> loadChild getAssociatedUsersForOrder
-  |> loadChild getCouponForOrder
-  |> loadChild getPriceDataForOrder
-  |> loadSerialWithTransaction
+let load: 'arg -> OrderDto -> Async<Order> =
+    createLoader orderFromDtos (fun dto -> dto.OrderId)
+    |> loadChild getOrderLinesForOrder
+    |> loadChild getAssociatedUsersForOrder
+    |> loadChild getCouponForOrder
+    |> loadChild getPriceDataForOrder
+    |> loadSerialWithTransaction
 ```
 
 #### Helper to load multiple root entities with all child entities
@@ -313,13 +279,13 @@ child entities belong to which roots.
 ```f#
 open Fling.Fling
 
-let loadBatch : 'arg -> OrderDto list -> Async<Order list> =
-  createBatchLoader orderFromDtos (fun dto -> dto.OrderId)
-  |> batchLoadChildren getOrderLinesForOrders (fun dto -> dto.OrderId)
-  |> batchLoadChildren getAssociatedUsersForOrders (fun dto -> dto.OrderId)
-  |> batchLoadOptChild getCouponForOrders (fun dto -> dto.OrderId)
-  |> batchLoadChild getPriceDataForOrders (fun dto -> dto.OrderId)
-  |> loadBatchSerialWithTransaction
+let loadBatch: 'arg -> OrderDto list -> Async<Order list> =
+    createBatchLoader orderFromDtos (fun dto -> dto.OrderId)
+    |> batchLoadChildren getOrderLinesForOrders (fun dto -> dto.OrderId)
+    |> batchLoadChildren getAssociatedUsersForOrders (fun dto -> dto.OrderId)
+    |> batchLoadOptChild getCouponForOrders (fun dto -> dto.OrderId)
+    |> batchLoadChild getPriceDataForOrders (fun dto -> dto.OrderId)
+    |> loadBatchSerialWithTransaction
 ```
 
 #### Helper to save a root entity and all child entities
@@ -338,30 +304,17 @@ here – [Facil](https://github.com/cmeeren/Facil) can generate these for you if
 ```f#
 open Fling.Fling
 
-let save : 'arg -> Order option -> Order -> Async<unit> =
-  saveRoot orderToDbDto insertOrder updateOrder
-  |> saveChildren
-       orderToLineDtos
-       (fun dto -> dto.OrderLineId)
-       insertOrderLine
-       updateOrderLine
-       deleteOrderLine
-  |> saveChildren
-       orderToAssociatedUserDtos
-       (fun dto -> dto.OrderId, dto.UserId)
-       insertOrderAssociatedUser
-       updateOrderAssociatedUser
-       deleteOrderAssociatedUser
-  |> saveOptChild
-       orderToCouponDto
-       (fun dto -> dto.OrderId)
-       insertCoupon
-       updateCoupon
-       deleteCoupon
-  |> saveChild
-       orderToPriceDataDto
-       insertPriceData
-       updatePriceData
+let save: 'arg -> Order option -> Order -> Async<unit> =
+    saveRoot orderToDbDto insertOrder updateOrder
+    |> saveChildren orderToLineDtos (fun dto -> dto.OrderLineId) insertOrderLine updateOrderLine deleteOrderLine
+    |> saveChildren
+        orderToAssociatedUserDtos
+        (fun dto -> dto.OrderId, dto.UserId)
+        insertOrderAssociatedUser
+        updateOrderAssociatedUser
+        deleteOrderAssociatedUser
+    |> saveOptChild orderToCouponDto (fun dto -> dto.OrderId) insertCoupon updateCoupon deleteCoupon
+    |> saveChild orderToPriceDataDto insertPriceData updatePriceData
 ```
 
 Note: You **MUST** pass `Some oldEntity`  if you are updating. Pass `None` only for initial insert of the domain
@@ -378,29 +331,26 @@ inserted/updated, the function returns `Some` with the result of the insert/upda
 For example:
 
 ```f#
-let saveChangesToOrder connStr (oldOrder: Order option) (newOrder: Order) =
-  async {
+let saveChangesToOrder connStr (oldOrder: Order option) (newOrder: Order) = async {
     use conn = new SqlConnection(connStr)
     do! conn.OpenAsync() |> Async.AwaitTask
     use tran = conn.BeginTransaction()
     do! save (conn, tran) oldOrder newOrder
     do! tran.CommitAsync() |> Async.AwaitTask
-  }
+}
 
-let getOrderById connStr (OrderId orderId) =
-  async {
+let getOrderById connStr (OrderId orderId) = async {
     match! dbGetOrderById connStr orderId with
     | None -> return None
     | Some orderDto ->
         let! order = load connStr orderDto
         return Some order
-  }
+}
 
-let getAllOrders connStr =
-  async {
+let getAllOrders connStr = async {
     let! orderDtos = dbGetAllOrders connStr
     return! loadBatch connStr orderDtos
-  }
+}
 ```
 
 Production readiness
@@ -444,13 +394,13 @@ For (non-batch) loading:
 open Fling.Fling
 open Fling.Interop.Facil.Fling
 
-let load : string -> OrderDto -> Async<Order> =
-  createLoader orderFromDtos (fun dto -> dto.OrderId)
-  |> loadChildren OrderLine_ByOrderId
-  |> loadChildren OrderAssociatedUser_ByOrderId
-  |> loadOptChild OrderCoupon_ByOrderId
-  |> loadChild OrderPriceData_ByOrderId
-  |> loadSerialWithTransaction
+let load: string -> OrderDto -> Async<Order> =
+    createLoader orderFromDtos (fun dto -> dto.OrderId)
+    |> loadChildren OrderLine_ByOrderId
+    |> loadChildren OrderAssociatedUser_ByOrderId
+    |> loadOptChild OrderCoupon_ByOrderId
+    |> loadChild OrderPriceData_ByOrderId
+    |> loadSerialWithTransaction
 ```
 
 For batch loading:
@@ -458,13 +408,13 @@ For batch loading:
 * `'arg` is locked to `string`, i.e. a connection string
 
 ```f#
-let loadBatch : string -> OrderDto list -> Async<Order list> =
-  createBatchLoader orderFromDtos (fun dto -> dto.OrderId)
-  |> batchLoadChildren OrderLine_ByOrderIds (fun dto -> dto.OrderId)
-  |> batchLoadChildren OrderAssociatedUser_ByOrderIds (fun dto -> dto.OrderId)
-  |> batchLoadOptChild OrderCoupon_ByOrderIds (fun dto -> dto.OrderId)
-  |> batchLoadChild OrderPriceData_ByOrderIds (fun dto -> dto.OrderId)
-  |> loadBatchSerialWithTransaction
+let loadBatch: string -> OrderDto list -> Async<Order list> =
+    createBatchLoader orderFromDtos (fun dto -> dto.OrderId)
+    |> batchLoadChildren OrderLine_ByOrderIds (fun dto -> dto.OrderId)
+    |> batchLoadChildren OrderAssociatedUser_ByOrderIds (fun dto -> dto.OrderId)
+    |> batchLoadOptChild OrderCoupon_ByOrderIds (fun dto -> dto.OrderId)
+    |> batchLoadChild OrderPriceData_ByOrderIds (fun dto -> dto.OrderId)
+    |> loadBatchSerialWithTransaction
 ```
 
 For saving:
@@ -472,30 +422,27 @@ For saving:
 * `'arg` is locked to `SqlConnection * SqlTransaction`
 
 ```f#
-let save : (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<unit> =
-  saveRoot orderToDbDto Order_Insert Order_Update
-  |> saveChildren
-       orderToLineDtos
-       DbGen.TableDtos.OrderLine.getPrimaryKey
-       OrderLine_Insert
-       OrderLine_Update
-       OrderLine_Delete
-  |> saveChildren
-       orderToAssociatedUserDtos
-       DbGen.TableDtos.OrderAssociatedUser.getPrimaryKey
-       OrderAssociatedUser_Insert
-       OrderAssociatedUser_Update
-       OrderAssociatedUser_Delete
-  |> saveOptChild
-       orderToCouponDto
-       DbGen.TableDtos.OrderCoupon.getPrimaryKey
-       OrderCoupon_Insert
-       OrderCoupon_Update
-       OrderCoupon_Delete
-  |> saveChild
-       orderToPriceDataDto
-       OrderPriceData_Insert
-       OrderPriceData_Update
+let save: (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<unit> =
+    saveRoot orderToDbDto Order_Insert Order_Update
+    |> saveChildren
+        orderToLineDtos
+        DbGen.TableDtos.OrderLine.getPrimaryKey
+        OrderLine_Insert
+        OrderLine_Update
+        OrderLine_Delete
+    |> saveChildren
+        orderToAssociatedUserDtos
+        DbGen.TableDtos.OrderAssociatedUser.getPrimaryKey
+        OrderAssociatedUser_Insert
+        OrderAssociatedUser_Update
+        OrderAssociatedUser_Delete
+    |> saveOptChild
+        orderToCouponDto
+        DbGen.TableDtos.OrderCoupon.getPrimaryKey
+        OrderCoupon_Insert
+        OrderCoupon_Update
+        OrderCoupon_Delete
+    |> saveChild orderToPriceDataDto OrderPriceData_Insert OrderPriceData_Update
 ```
 
 Use `withTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string) and
@@ -504,8 +451,8 @@ else:
 
 ```f#
 let save : string -> Order option -> Order -> Async<unit> =
-  .. // Same code as above
-  |> withTransactionFromConnStr
+    (* same code as above *)
+    |> withTransactionFromConnStr
 ```
 
 As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s
