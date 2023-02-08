@@ -228,7 +228,9 @@ let tests =
                     load () () |> Async.RunSynchronously
                     sw.Stop()
 
-                    Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+                    // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
+                    // ~1000ms, so 2500 seems OK.
+                    Expect.isGreaterThan sw.ElapsedMilliseconds 2500L ""
             )
 
 
@@ -364,7 +366,9 @@ let tests =
                     load () [ () ] |> Async.RunSynchronously |> ignore
                     sw.Stop()
 
-                    Expect.isGreaterThan sw.ElapsedMilliseconds 3000L ""
+                    // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
+                    // ~1000ms, so 2500 seems OK.
+                    Expect.isGreaterThan sw.ElapsedMilliseconds 2500L ""
             )
 
 
