@@ -29,7 +29,6 @@ jobs:
         run: dotnet test -c Release --no-build -- Expecto.fail-on-focused-tests=true
 
       - name: Push
-        if: startsWith(github.ref, 'refs/tags/v/')
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push "**/*.nupkg" -s "https://api.nuget.org/v3/index.json" -k "$NUGET_API_KEY" --skip-duplicate
