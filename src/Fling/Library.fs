@@ -14,19 +14,20 @@ module Fling =
         (insert: 'arg -> 'rootDto -> Async<'saveResult>)
         (update: 'arg -> 'rootDto -> Async<'saveResult>)
         : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult option> =
-        fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) -> async {
-            match oldRoot with
-            | None -> return! newRoot |> toDto |> insert arg |> Async.map Some
+        fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
+            async {
+                match oldRoot with
+                | None -> return! newRoot |> toDto |> insert arg |> Async.map Some
 
-            | Some oldRoot ->
-                let oldDto = toDto oldRoot
-                let newDto = toDto newRoot
+                | Some oldRoot ->
+                    let oldDto = toDto oldRoot
+                    let newDto = toDto newRoot
 
-                if oldDto <> newDto then
-                    return! update arg newDto |> Async.map Some
-                else
-                    return None
-        }
+                    if oldDto <> newDto then
+                        return! update arg newDto |> Async.map Some
+                    else
+                        return None
+            }
 
 
     let saveRoot
@@ -48,41 +49,42 @@ module Fling =
         (delete: 'arg -> 'childDtoId -> Async<unit>)
         (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
         : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
-        fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) -> async {
-            let! result = existingSave arg oldRoot newRoot
+        fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
+            async {
+                let! result = existingSave arg oldRoot newRoot
 
-            match oldRoot with
-            | None ->
-                for dto in newToDtos newRoot do
-                    do! insert arg dto
+                match oldRoot with
+                | None ->
+                    for dto in newToDtos newRoot do
+                        do! insert arg dto
 
-            | Some oldRoot ->
-                let oldChildren = oldToDtos oldRoot
-                let newChildren = newToDtos newRoot
+                | Some oldRoot ->
+                    let oldChildren = oldToDtos oldRoot
+                    let newChildren = newToDtos newRoot
 
-                let oldChildrenById = Dictionary<'childDtoId, 'childDto>()
-                let newChildrenById = Dictionary<'childDtoId, 'childDto>()
+                    let oldChildrenById = Dictionary<'childDtoId, 'childDto>()
+                    let newChildrenById = Dictionary<'childDtoId, 'childDto>()
 
-                for dto in oldChildren do
-                    oldChildrenById[getId dto] <- dto
+                    for dto in oldChildren do
+                        oldChildrenById[getId dto] <- dto
 
-                for dto in newChildren do
-                    newChildrenById[getId dto] <- dto
+                    for dto in newChildren do
+                        newChildrenById[getId dto] <- dto
 
-                for oldChild in oldChildren do
-                    let oldChildId = getId oldChild
+                    for oldChild in oldChildren do
+                        let oldChildId = getId oldChild
 
-                    if not (newChildrenById.ContainsKey oldChildId) then
-                        do! delete arg oldChildId
+                        if not (newChildrenById.ContainsKey oldChildId) then
+                            do! delete arg oldChildId
 
-                for newChild in newChildren do
-                    match oldChildrenById.TryGetValue(getId newChild) with
-                    | false, _ -> do! insert arg newChild
-                    | true, oldChild when newChild <> oldChild -> do! update arg newChild
-                    | true, _ -> ()
+                    for newChild in newChildren do
+                        match oldChildrenById.TryGetValue(getId newChild) with
+                        | false, _ -> do! insert arg newChild
+                        | true, oldChild when newChild <> oldChild -> do! update arg newChild
+                        | true, _ -> ()
 
-            return result
-        }
+                return result
+            }
 
 
     let saveChildren
@@ -111,7 +113,8 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveChildrenWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}")
+                    $"Update needed in saveChildrenWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+            )
             delete
             existingSave
 
@@ -171,7 +174,8 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveOptChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}")
+                    $"Update needed in saveOptChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+            )
             delete
             existingSave
 
@@ -224,7 +228,8 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}")
+                    $"Update needed in saveChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}"
+            )
             existingSave
 
 
@@ -313,21 +318,22 @@ module Fling =
         (loader: Loader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, 'arg>)
         : Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-        let load loadInParallel arg rootDto = async {
-            let! loadComp =
-                loader.Load loadInParallel arg rootDto
-                |> if loadInParallel then Async.StartChild else async.Return
+        let load loadInParallel arg rootDto =
+            async {
+                let! loadComp =
+                    loader.Load loadInParallel arg rootDto
+                    |> if loadInParallel then Async.StartChild else async.Return
 
-            let! childComp =
-                rootDto
-                |> loader.GetId
-                |> loadChild arg
-                |> if loadInParallel then Async.StartChild else async.Return
+                let! childComp =
+                    rootDto
+                    |> loader.GetId
+                    |> loadChild arg
+                    |> if loadInParallel then Async.StartChild else async.Return
 
-            let! load = loadComp
-            let! child = childComp
-            return load child
-        }
+                let! load = loadComp
+                let! child = childComp
+                return load child
+            }
 
         { GetId = loader.GetId; Load = load }
 
@@ -338,38 +344,40 @@ module Fling =
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, 'arg>)
         : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
-        let load loadInParallel arg rootDtos = async {
-            let! loadComp =
-                loader.Load loadInParallel arg rootDtos
-                |> if loadInParallel then Async.StartChild else async.Return
+        let load loadInParallel arg rootDtos =
+            async {
+                let! loadComp =
+                    loader.Load loadInParallel arg rootDtos
+                    |> if loadInParallel then Async.StartChild else async.Return
 
-            let! childComp =
-                rootDtos
-                |> List.map loader.GetId
-                |> loadChildren arg
-                |> if loadInParallel then Async.StartChild else async.Return
+                let! childComp =
+                    rootDtos
+                    |> List.map loader.GetId
+                    |> loadChildren arg
+                    |> if loadInParallel then Async.StartChild else async.Return
 
-            let! load = loadComp
-            let! childBatch = childComp
+                let! load = loadComp
+                let! childBatch = childComp
 
-            let childByRootId = Dictionary<'rootDtoId, ResizeArray<'childDto>>()
+                let childByRootId = Dictionary<'rootDtoId, ResizeArray<'childDto>>()
 
-            for child in childBatch do
-                let rootId = getRootId child
-
-                match childByRootId.TryGetValue rootId with
-                | false, _ -> childByRootId[rootId] <- ResizeArray([ child ])
-                | true, existingChildren -> existingChildren.Add child
-
-            return
-                List.zip load rootDtos
-                |> List.map (fun (f, rootDto) ->
-                    let rootId = loader.GetId rootDto
+                for child in childBatch do
+                    let rootId = getRootId child
 
                     match childByRootId.TryGetValue rootId with
-                    | false, _ -> f []
-                    | true, children -> f (Seq.toList children))
-        }
+                    | false, _ -> childByRootId[rootId] <- ResizeArray([ child ])
+                    | true, existingChildren -> existingChildren.Add child
+
+                return
+                    List.zip load rootDtos
+                    |> List.map (fun (f, rootDto) ->
+                        let rootId = loader.GetId rootDto
+
+                        match childByRootId.TryGetValue rootId with
+                        | false, _ -> f []
+                        | true, children -> f (Seq.toList children)
+                    )
+            }
 
         { GetId = loader.GetId; Load = load }
 
@@ -381,20 +389,22 @@ module Fling =
         : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
         let load: bool -> 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
-            fun loadInParallel arg rootDtos -> async {
-                let! fs = loader.Load loadInParallel arg rootDtos
+            fun loadInParallel arg rootDtos ->
+                async {
+                    let! fs = loader.Load loadInParallel arg rootDtos
 
-                return
-                    List.zip rootDtos fs
-                    |> List.map (fun (rootDto, f) ->
-                        function
-                        | [] -> invalidOp $"No child entity found for root entity '%A{loader.GetId rootDto}'"
-                        | [ child ] -> f child
-                        | children ->
-                            invalidOp
-                            <| "Multiple child entities found for root entity "
-                               + $"'%A{loader.GetId rootDto}': %A{children}")
-            }
+                    return
+                        List.zip rootDtos fs
+                        |> List.map (fun (rootDto, f) ->
+                            function
+                            | [] -> invalidOp $"No child entity found for root entity '%A{loader.GetId rootDto}'"
+                            | [ child ] -> f child
+                            | children ->
+                                invalidOp
+                                <| "Multiple child entities found for root entity "
+                                   + $"'%A{loader.GetId rootDto}': %A{children}"
+                        )
+                }
 
         let newLoader: BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, 'arg> = {
             GetId = loader.GetId
@@ -411,20 +421,22 @@ module Fling =
         : BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg> =
 
         let load: bool -> 'arg -> 'rootDto list -> Async<('childDto list -> 'loadResult) list> =
-            fun loadInParallel arg rootDtos -> async {
-                let! fs = loader.Load loadInParallel arg rootDtos
+            fun loadInParallel arg rootDtos ->
+                async {
+                    let! fs = loader.Load loadInParallel arg rootDtos
 
-                return
-                    List.zip rootDtos fs
-                    |> List.map (fun (rootDto, f) ->
-                        function
-                        | [] -> f None
-                        | [ child ] -> f (Some child)
-                        | children ->
-                            invalidOp
-                            <| "Multiple child entities found for root entity "
-                               + $"'%A{loader.GetId rootDto}': %A{children}")
-            }
+                    return
+                        List.zip rootDtos fs
+                        |> List.map (fun (rootDto, f) ->
+                            function
+                            | [] -> f None
+                            | [ child ] -> f (Some child)
+                            | children ->
+                                invalidOp
+                                <| "Multiple child entities found for root entity "
+                                   + $"'%A{loader.GetId rootDto}': %A{children}"
+                        )
+                }
 
         let newLoader: BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, 'arg> = {
             GetId = loader.GetId

@@ -204,11 +204,12 @@ module DbScripts =
 
     /// This is for checking that the Fling API works with SRTP matching the expected DTO
     /// shape
-    let inline insertCoupon (_conn: SqlConnection, _tran: SqlTransaction) (dto: ^a) : Async<unit> = async {
-        ignore (^a: (member OrderId: int) dto)
-        ignore (^a: (member Code: string) dto)
-        ignore (^a: (member Expiration: DateTimeOffset) dto)
-    }
+    let inline insertCoupon (_conn: SqlConnection, _tran: SqlTransaction) (dto: ^a) : Async<unit> =
+        async {
+            ignore (^a: (member OrderId: int) dto)
+            ignore (^a: (member Code: string) dto)
+            ignore (^a: (member Expiration: DateTimeOffset) dto)
+        }
 
     let updateCoupon (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderCouponDto) : Async<unit> =
         async.Return()
@@ -284,39 +285,44 @@ module Db =
             |> saveChild orderToPriceDataDto insertPriceData updatePriceData
 
 
-        let saveChanges connStr (oldOrder: Order option) (newOrder: Order) = async {
-            let conn = SqlConnection connStr
-            use tran = createTransaction conn
-            do! save (conn, tran) oldOrder newOrder
-            commit tran
-        }
+        let saveChanges connStr (oldOrder: Order option) (newOrder: Order) =
+            async {
+                let conn = SqlConnection connStr
+                use tran = createTransaction conn
+                do! save (conn, tran) oldOrder newOrder
+                commit tran
+            }
 
 
-        let byIdWithoutTransaction connStr (OrderId oid) = async {
-            match! getOrderById connStr oid with
-            | None -> return None
-            | Some orderDto ->
-                let! order = loadWithoutTransaction connStr orderDto
-                return Some order
-        }
+        let byIdWithoutTransaction connStr (OrderId oid) =
+            async {
+                match! getOrderById connStr oid with
+                | None -> return None
+                | Some orderDto ->
+                    let! order = loadWithoutTransaction connStr orderDto
+                    return Some order
+            }
 
 
-        let byIdWithTransaction connStr (OrderId oid) = async {
-            match! getOrderById connStr oid with
-            | None -> return None
-            | Some orderDto ->
-                let! order = loadWithTransaction connStr orderDto
-                return Some order
-        }
+        let byIdWithTransaction connStr (OrderId oid) =
+            async {
+                match! getOrderById connStr oid with
+                | None -> return None
+                | Some orderDto ->
+                    let! order = loadWithTransaction connStr orderDto
+                    return Some order
+            }
 
 
-        let allWithoutTransaction connStr = async {
-            let! orderDtos = getAllOrders connStr
-            return! loadBatchWithoutTransaction connStr orderDtos
-        }
+        let allWithoutTransaction connStr =
+            async {
+                let! orderDtos = getAllOrders connStr
+                return! loadBatchWithoutTransaction connStr orderDtos
+            }
 
 
-        let allWithTransaction connStr = async {
-            let! orderDtos = getAllOrders connStr
-            return! loadBatchWithTransaction connStr orderDtos
-        }
+        let allWithTransaction connStr =
+            async {
+                let! orderDtos = getAllOrders connStr
+                return! loadBatchWithTransaction connStr orderDtos
+            }

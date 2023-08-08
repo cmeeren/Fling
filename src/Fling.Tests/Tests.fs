@@ -72,67 +72,70 @@ module Dtos =
 module Gen =
 
 
-    let rootDtoWithChildDtos = gen {
+    let rootDtoWithChildDtos =
+        gen {
 
-        let! rootDto = GenX.auto<RootDto>
+            let! rootDto = GenX.auto<RootDto>
 
-        let! toOneDto = GenX.auto<ChildToOneDto>
-        let toOneDto = { toOneDto with RootId = rootDto.Id }
+            let! toOneDto = GenX.auto<ChildToOneDto>
+            let toOneDto = { toOneDto with RootId = rootDto.Id }
 
-        let! toOneOptDto = GenX.auto<ChildToOneOptDto option>
+            let! toOneOptDto = GenX.auto<ChildToOneOptDto option>
 
-        let toOneOptDto =
-            toOneOptDto |> Option.map (fun x -> { x with RootId = rootDto.Id })
+            let toOneOptDto =
+                toOneOptDto |> Option.map (fun x -> { x with RootId = rootDto.Id })
 
-        let! toManyDtos = GenX.auto<ChildToManyDto list> |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
-        let toManyDtos = toManyDtos |> List.map (fun x -> { x with RootId = rootDto.Id })
+            let! toManyDtos = GenX.auto<ChildToManyDto list> |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
+            let toManyDtos = toManyDtos |> List.map (fun x -> { x with RootId = rootDto.Id })
 
-        return rootDto, toOneDto, toOneOptDto, toManyDtos
-    }
+            return rootDto, toOneDto, toOneOptDto, toManyDtos
+        }
 
 
-    let rootDtoWithChildDtosWithUpdates = gen {
-        let config =
-            { GenX.defaults with
-                SeqRange = Range.linear 1 7
-            }
-            |> AutoGenConfig.addGenerator (Gen.int32 (Range.linear 1 20))
-            |> AutoGenConfig.addGenerator (Gen.alphaNum |> Gen.string (Range.linear 1 10))
+    let rootDtoWithChildDtosWithUpdates =
+        gen {
+            let config =
+                {
+                    GenX.defaults with
+                        SeqRange = Range.linear 1 7
+                }
+                |> AutoGenConfig.addGenerator (Gen.int32 (Range.linear 1 20))
+                |> AutoGenConfig.addGenerator (Gen.alphaNum |> Gen.string (Range.linear 1 10))
 
-        let! rootDto = GenX.autoWith<RootDto> config
-        let! rootDto' = GenX.autoWith<RootDto> config
-        let rootDto' = { rootDto' with Id = rootDto.Id }
+            let! rootDto = GenX.autoWith<RootDto> config
+            let! rootDto' = GenX.autoWith<RootDto> config
+            let rootDto' = { rootDto' with Id = rootDto.Id }
 
-        let! toOneDto = GenX.autoWith<ChildToOneDto> config
-        let toOneDto = { toOneDto with RootId = rootDto.Id }
+            let! toOneDto = GenX.autoWith<ChildToOneDto> config
+            let toOneDto = { toOneDto with RootId = rootDto.Id }
 
-        let! toOneDto' = GenX.autoWith<ChildToOneDto> config
-        let toOneDto' = { toOneDto' with RootId = rootDto'.Id }
+            let! toOneDto' = GenX.autoWith<ChildToOneDto> config
+            let toOneDto' = { toOneDto' with RootId = rootDto'.Id }
 
-        let! toOneOptDto = GenX.autoWith<ChildToOneOptDto option> config
+            let! toOneOptDto = GenX.autoWith<ChildToOneOptDto option> config
 
-        let toOneOptDto =
-            toOneOptDto |> Option.map (fun x -> { x with RootId = rootDto.Id })
+            let toOneOptDto =
+                toOneOptDto |> Option.map (fun x -> { x with RootId = rootDto.Id })
 
-        let! toOneOptDto' = GenX.autoWith<ChildToOneOptDto option> config
+            let! toOneOptDto' = GenX.autoWith<ChildToOneOptDto option> config
 
-        let toOneOptDto' =
-            toOneOptDto' |> Option.map (fun x -> { x with RootId = rootDto.Id })
+            let toOneOptDto' =
+                toOneOptDto' |> Option.map (fun x -> { x with RootId = rootDto.Id })
 
-        let! toManyDtos =
-            GenX.autoWith<ChildToManyDto list> config
-            |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
+            let! toManyDtos =
+                GenX.autoWith<ChildToManyDto list> config
+                |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
 
-        let toManyDtos = toManyDtos |> List.map (fun x -> { x with RootId = rootDto.Id })
+            let toManyDtos = toManyDtos |> List.map (fun x -> { x with RootId = rootDto.Id })
 
-        let! toManyDtos' =
-            GenX.autoWith<ChildToManyDto list> config
-            |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
+            let! toManyDtos' =
+                GenX.autoWith<ChildToManyDto list> config
+                |> Gen.filter (List.isDistinctBy (fun x -> x.Id))
 
-        let toManyDtos' = toManyDtos' |> List.map (fun x -> { x with RootId = rootDto.Id })
+            let toManyDtos' = toManyDtos' |> List.map (fun x -> { x with RootId = rootDto.Id })
 
-        return rootDto, toOneDto, toOneOptDto, toManyDtos, rootDto', toOneDto', toOneOptDto', toManyDtos'
-    }
+            return rootDto, toOneDto, toOneOptDto, toManyDtos, rootDto', toOneDto', toOneOptDto', toManyDtos'
+        }
 
 
 
@@ -155,24 +158,27 @@ let tests =
 
                     let mutable getToOneForRootCalledWith = None
 
-                    let getToOneForRoot arg (rootId: int) = async {
-                        getToOneForRootCalledWith <- Some(arg, rootId)
-                        return toOneDto
-                    }
+                    let getToOneForRoot arg (rootId: int) =
+                        async {
+                            getToOneForRootCalledWith <- Some(arg, rootId)
+                            return toOneDto
+                        }
 
                     let mutable getToOneOptForRootCalledWith = None
 
-                    let getToOneOptForRoot arg (rootId: int) = async {
-                        getToOneOptForRootCalledWith <- Some(arg, rootId)
-                        return toOneOptDto
-                    }
+                    let getToOneOptForRoot arg (rootId: int) =
+                        async {
+                            getToOneOptForRootCalledWith <- Some(arg, rootId)
+                            return toOneOptDto
+                        }
 
                     let mutable getToManyForRootCalledWith = None
 
-                    let getToManyForRoot arg (rootId: int) = async {
-                        getToManyForRootCalledWith <- Some(arg, rootId)
-                        return toManyDtos
-                    }
+                    let getToManyForRoot arg (rootId: int) =
+                        async {
+                            getToManyForRootCalledWith <- Some(arg, rootId)
+                            return toManyDtos
+                        }
 
                     let load =
                         createLoader dtosToRoot (fun dto -> dto.Id)
@@ -236,10 +242,11 @@ let tests =
 
             testCase "Does not run the loaders in a transaction if using loadParallelWithoutTransaction"
             <| fun () ->
-                let getChild _ _ = async {
-                    Expect.isNull Transaction.Current ""
-                    return [ () ]
-                }
+                let getChild _ _ =
+                    async {
+                        Expect.isNull Transaction.Current ""
+                        return [ () ]
+                    }
 
                 let load =
                     createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -251,10 +258,11 @@ let tests =
 
             testCase "Runs the loaders in a transaction if using loadSerialWithTransaction"
             <| fun () ->
-                let getChild _ _ = async {
-                    Expect.isNotNull Transaction.Current ""
-                    return [ () ]
-                }
+                let getChild _ _ =
+                    async {
+                        Expect.isNotNull Transaction.Current ""
+                        return [ () ]
+                    }
 
                 let load =
                     createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -281,24 +289,27 @@ let tests =
 
                     let mutable getToOneForRootCalledWith = None
 
-                    let getToOneForRoots arg (rootIds: int list) = async {
-                        getToOneForRootCalledWith <- Some(arg, rootIds)
-                        return dtos |> List.map (fun (_, xs, _, _) -> xs)
-                    }
+                    let getToOneForRoots arg (rootIds: int list) =
+                        async {
+                            getToOneForRootCalledWith <- Some(arg, rootIds)
+                            return dtos |> List.map (fun (_, xs, _, _) -> xs)
+                        }
 
                     let mutable getToOneOptForRootsCalledWith = None
 
-                    let getToOneOptForRoots arg (rootIds: int list) = async {
-                        getToOneOptForRootsCalledWith <- Some(arg, rootIds)
-                        return dtos |> List.choose (fun (_, _, xs, _) -> xs)
-                    }
+                    let getToOneOptForRoots arg (rootIds: int list) =
+                        async {
+                            getToOneOptForRootsCalledWith <- Some(arg, rootIds)
+                            return dtos |> List.choose (fun (_, _, xs, _) -> xs)
+                        }
 
                     let mutable getToManyForRootsCalledWith = None
 
-                    let getToManyForRoots arg (rootIds: int list) = async {
-                        getToManyForRootsCalledWith <- Some(arg, rootIds)
-                        return dtos |> List.collect (fun (_, _, _, xs) -> xs)
-                    }
+                    let getToManyForRoots arg (rootIds: int list) =
+                        async {
+                            getToManyForRootsCalledWith <- Some(arg, rootIds)
+                            return dtos |> List.collect (fun (_, _, _, xs) -> xs)
+                        }
 
                     let load =
                         createBatchLoader dtosToRoot (fun dto -> dto.Id)
@@ -313,7 +324,8 @@ let tests =
                     let expected =
                         dtos
                         |> List.map (fun (rootDto, toOneDto, toOneOptDto, toManyDtos) ->
-                            dtosToRoot rootDto toOneDto toOneOptDto toManyDtos)
+                            dtosToRoot rootDto toOneDto toOneOptDto toManyDtos
+                        )
 
                     let actual = load arg rootDtos |> Async.RunSynchronously
 
@@ -327,10 +339,11 @@ let tests =
             testSequenced (
                 testCase "Runs the loaders in parallel if using the parallel loader"
                 <| fun () ->
-                    let getChild _ _ = async {
-                        do! Async.Sleep 1000
-                        return [ () ]
-                    }
+                    let getChild _ _ =
+                        async {
+                            do! Async.Sleep 1000
+                            return [ () ]
+                        }
 
                     let load =
                         createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -350,10 +363,11 @@ let tests =
             testSequenced (
                 testCase "Does not run the loaders in parallel if using the serial loader"
                 <| fun () ->
-                    let getChild _ _ = async {
-                        do! Async.Sleep 1000
-                        return [ () ]
-                    }
+                    let getChild _ _ =
+                        async {
+                            do! Async.Sleep 1000
+                            return [ () ]
+                        }
 
                     let load =
                         createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -374,10 +388,11 @@ let tests =
 
             testCase "Does not run the loaders in a transaction if using runBatchLoader"
             <| fun () ->
-                let getChild _ _ = async {
-                    Expect.isNull Transaction.Current ""
-                    return [ () ]
-                }
+                let getChild _ _ =
+                    async {
+                        Expect.isNull Transaction.Current ""
+                        return [ () ]
+                    }
 
                 let load =
                     createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -391,10 +406,11 @@ let tests =
 
             testCase "Runs the loaders in a transaction if using loadBatchSerialWithTransaction"
             <| fun () ->
-                let getChild _ _ = async {
-                    Expect.isNotNull Transaction.Current ""
-                    return [ () ]
-                }
+                let getChild _ _ =
+                    async {
+                        Expect.isNotNull Transaction.Current ""
+                        return [ () ]
+                    }
 
                 let load =
                     createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
@@ -426,75 +442,85 @@ let tests =
 
                     let mutable insertRootCalledWith = []
 
-                    let insertRoot arg dto = async {
-                        insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let insertRoot arg dto =
+                        async {
+                            insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable updateRootCalledWith = []
 
-                    let updateRoot arg dto = async {
-                        updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let updateRoot arg dto =
+                        async {
+                            updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable insertToOneCalledWith = []
 
-                    let insertToOne arg dto = async {
-                        insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOne arg dto =
+                        async {
+                            insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneCalledWith = []
 
-                    let updateToOne arg dto = async {
-                        updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOne arg dto =
+                        async {
+                            updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToOneOptCalledWith = []
 
-                    let insertToOneOpt arg dto = async {
-                        insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOneOpt arg dto =
+                        async {
+                            insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneOptCalledWith = []
 
-                    let updateToOneOpt arg dto = async {
-                        updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOneOpt arg dto =
+                        async {
+                            updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToOneOptCalledWith = []
 
-                    let deleteToOneOpt arg dto = async {
-                        deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToOneOpt arg dto =
+                        async {
+                            deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToManyCalledWith = []
 
-                    let insertToMany arg dto = async {
-                        insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToMany arg dto =
+                        async {
+                            insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToManyCalledWith = []
 
-                    let updateToMany arg dto = async {
-                        updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToMany arg dto =
+                        async {
+                            updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToManyCalledWith = []
 
-                    let deleteToMany arg dto = async {
-                        deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToMany arg dto =
+                        async {
+                            deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
 
                     let rootToDto () = rootDto
@@ -571,75 +597,85 @@ let tests =
 
                     let mutable insertRootCalledWith = []
 
-                    let insertRoot arg dto = async {
-                        insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let insertRoot arg dto =
+                        async {
+                            insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable updateRootCalledWith = []
 
-                    let updateRoot arg dto = async {
-                        updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let updateRoot arg dto =
+                        async {
+                            updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable insertToOneCalledWith = []
 
-                    let insertToOne arg dto = async {
-                        insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOne arg dto =
+                        async {
+                            insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneCalledWith = []
 
-                    let updateToOne arg dto = async {
-                        updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOne arg dto =
+                        async {
+                            updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToOneOptCalledWith = []
 
-                    let insertToOneOpt arg dto = async {
-                        insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOneOpt arg dto =
+                        async {
+                            insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneOptCalledWith = []
 
-                    let updateToOneOpt arg dto = async {
-                        updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOneOpt arg dto =
+                        async {
+                            updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToOneOptCalledWith = []
 
-                    let deleteToOneOpt arg dto = async {
-                        deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToOneOpt arg dto =
+                        async {
+                            deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToManyCalledWith = []
 
-                    let insertToMany arg dto = async {
-                        insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToMany arg dto =
+                        async {
+                            insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToManyCalledWith = []
 
-                    let updateToMany arg dto = async {
-                        updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToMany arg dto =
+                        async {
+                            updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToManyCalledWith = []
 
-                    let deleteToMany arg dto = async {
-                        deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToMany arg dto =
+                        async {
+                            deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
 
                     let rootToDto =
@@ -786,75 +822,85 @@ let tests =
 
                     let mutable insertRootCalledWith = []
 
-                    let insertRoot arg dto = async {
-                        insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let insertRoot arg dto =
+                        async {
+                            insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable updateRootCalledWith = []
 
-                    let updateRoot arg dto = async {
-                        updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let updateRoot arg dto =
+                        async {
+                            updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable insertToOneCalledWith = []
 
-                    let insertToOne arg dto = async {
-                        insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOne arg dto =
+                        async {
+                            insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneCalledWith = []
 
-                    let updateToOne arg dto = async {
-                        updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOne arg dto =
+                        async {
+                            updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToOneOptCalledWith = []
 
-                    let insertToOneOpt arg dto = async {
-                        insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOneOpt arg dto =
+                        async {
+                            insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneOptCalledWith = []
 
-                    let updateToOneOpt arg dto = async {
-                        updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOneOpt arg dto =
+                        async {
+                            updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToOneOptCalledWith = []
 
-                    let deleteToOneOpt arg dto = async {
-                        deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToOneOpt arg dto =
+                        async {
+                            deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToManyCalledWith = []
 
-                    let insertToMany arg dto = async {
-                        insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToMany arg dto =
+                        async {
+                            insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToManyCalledWith = []
 
-                    let updateToMany arg dto = async {
-                        updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToMany arg dto =
+                        async {
+                            updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToManyCalledWith = []
 
-                    let deleteToMany arg dto = async {
-                        deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToMany arg dto =
+                        async {
+                            deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
 
                     let rootToDto () = rootDto
@@ -942,75 +988,85 @@ let tests =
 
                     let mutable insertRootCalledWith = []
 
-                    let insertRoot arg dto = async {
-                        insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let insertRoot arg dto =
+                        async {
+                            insertRootCalledWith <- insertRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable updateRootCalledWith = []
 
-                    let updateRoot arg dto = async {
-                        updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                        return result
-                    }
+                    let updateRoot arg dto =
+                        async {
+                            updateRootCalledWith <- updateRootCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                            return result
+                        }
 
                     let mutable insertToOneCalledWith = []
 
-                    let insertToOne arg dto = async {
-                        insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOne arg dto =
+                        async {
+                            insertToOneCalledWith <- insertToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneCalledWith = []
 
-                    let updateToOne arg dto = async {
-                        updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOne arg dto =
+                        async {
+                            updateToOneCalledWith <- updateToOneCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToOneOptCalledWith = []
 
-                    let insertToOneOpt arg dto = async {
-                        insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToOneOpt arg dto =
+                        async {
+                            insertToOneOptCalledWith <- insertToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToOneOptCalledWith = []
 
-                    let updateToOneOpt arg dto = async {
-                        updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToOneOpt arg dto =
+                        async {
+                            updateToOneOptCalledWith <- updateToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToOneOptCalledWith = []
 
-                    let deleteToOneOpt arg dto = async {
-                        deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToOneOpt arg dto =
+                        async {
+                            deleteToOneOptCalledWith <- deleteToOneOptCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable insertToManyCalledWith = []
 
-                    let insertToMany arg dto = async {
-                        insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let insertToMany arg dto =
+                        async {
+                            insertToManyCalledWith <- insertToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable updateToManyCalledWith = []
 
-                    let updateToMany arg dto = async {
-                        updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let updateToMany arg dto =
+                        async {
+                            updateToManyCalledWith <- updateToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
                     let mutable deleteToManyCalledWith = []
 
-                    let deleteToMany arg dto = async {
-                        deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
-                        i <- i + 1
-                    }
+                    let deleteToMany arg dto =
+                        async {
+                            deleteToManyCalledWith <- deleteToManyCalledWith @ [ i, arg, dto ]
+                            i <- i + 1
+                        }
 
 
                     let save =
