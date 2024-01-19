@@ -16,9 +16,9 @@
     <PackageReference Include="Expecto" Version="10.1.0" />
     <PackageReference Include="Hedgehog" Version="0.13.0" />
     <PackageReference Include="Hedgehog.Experimental" Version="0.7.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
-    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.14.2" />
-    <PackageReference Update="FSharp.Core" Version="7.0.400" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.14.3" />
+    <PackageReference Update="FSharp.Core" Version="8.0.101" />
   </ItemGroup>
 
   <ItemGroup>
