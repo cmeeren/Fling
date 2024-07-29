@@ -15,7 +15,7 @@
     <!-- TODO: Create and add logo -->
     <!--<PackageIcon>fling-logo-128x128.png</PackageIcon>-->
     <PackageReleaseNotes>https://github.com/cmeeren/Fling/blob/master/RELEASE_NOTES_Fling.Interop.Facil.md</PackageReleaseNotes>
-    <Version>0.2.6</Version>
+    <Version>0.2.7</Version>
   </PropertyGroup>
 
   <ItemGroup>
