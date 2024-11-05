@@ -294,7 +294,8 @@ Given an old root entity (`None` for initial creation, must be `Some` for update
 helper performs the necessary inserts/updates/deletes. It skips updating identical records (compared using `=`).
 
 Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each
-new child is either inserted or updated (or skipped if it’s equal).
+new child is either inserted or updated (or skipped if it’s equal). For batched to-many child entities, all deletes are
+performed first, then all updates, then all inserts.
 
 For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of
 the DTO. This will be passed to the `delete` function if the entity needs to be deleted, and is used for to-many
@@ -306,7 +307,7 @@ open Fling.Fling
 
 let save: 'arg -> Order option -> Order -> Async<unit> =
     saveRoot orderToDbDto insertOrder updateOrder
-    |> saveChildren orderToLineDtos (fun dto -> dto.OrderLineId) insertOrderLine updateOrderLine deleteOrderLine
+    |> batchSaveChildren orderToLineDtos (fun dto -> dto.OrderLineId) insertOrderLines updateOrderLines deleteOrderLines
     |> saveChildren
         orderToAssociatedUserDtos
         (fun dto -> dto.OrderId, dto.UserId)
@@ -424,12 +425,12 @@ For saving:
 ```f#
 let save: (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<unit> =
     saveRoot orderToDbDto Order_Insert Order_Update
-    |> saveChildren
+    |> batchSaveChildren
         orderToLineDtos
         DbGen.TableDtos.OrderLine.getPrimaryKey
-        OrderLine_Insert
-        OrderLine_Update
-        OrderLine_Delete
+        OrderLine_InsertBatch
+        OrderLine_UpdateBatch
+        OrderLine_DeleteBatch
     |> saveChildren
         orderToAssociatedUserDtos
         DbGen.TableDtos.OrderAssociatedUser.getPrimaryKey
