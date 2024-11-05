@@ -469,14 +469,6 @@ table B. The ordering of operations can only be specified at the table (or “ch
 for a table is performed before the next table. This may have implications for foreign key constraints in complex
 aggregates.
 
-### Transactional consistency on load can not be 100% guaranteed
-
-Fling fetches child entities in parallel. I have not found a way to use transactions with parallel commands/connections.
-This means that it is not possible to guarantee a transactionally consistent view of the whole aggregate. Specifically,
-it is theoretically possible that Facil loads data from some tables, then another operation changes the data, and then
-Facil continues to load the now updated data from the rest of the tables. Only you know if this will pose a problem for
-you. I have not had problems with it. You may be able to avoid it with locking.
-
 ## Deployment checklist
 
 For maintainers.
