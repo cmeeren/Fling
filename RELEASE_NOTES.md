@@ -5,7 +5,7 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
-### Unreleased
+### 0.4.1 (2024-11-05)
 
 * Added `batchSaveChildren*` functions for batching inserts/updates/deletes of to-many children
 
