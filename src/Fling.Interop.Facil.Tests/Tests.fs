@@ -268,6 +268,30 @@ module FacilMock =
             ChildToMany_Insert_Executable()
 
 
+    type ChildToMany_InsertBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToMany_InsertBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Id``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToMany_InsertBatch_args
+
+
+    type ChildToMany_InsertBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToMany_InsertBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToMany_InsertBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_InsertBatch()
+        member _.WithParameters(_args: seq<ChildToMany_InsertBatch_args>) = ChildToMany_InsertBatch_Executable()
+
+
     type ChildToMany_Update_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -284,6 +308,30 @@ module FacilMock =
             ChildToMany_Update_Executable()
 
 
+    type ChildToMany_UpdateBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToMany_UpdateBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Id``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToMany_UpdateBatch_args
+
+
+    type ChildToMany_UpdateBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToMany_UpdateBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToMany_UpdateBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_UpdateBatch()
+        member _.WithParameters(_args: seq<ChildToMany_UpdateBatch_args>) = ChildToMany_UpdateBatch_Executable()
+
+
     type ChildToMany_Delete_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -296,6 +344,28 @@ module FacilMock =
         member inline _.WithParameters(dto: ^a) =
             ignore (^a: (member Id: int) dto)
             ChildToMany_Delete_Executable()
+
+
+    type ChildToMany_DeleteBatch_args(_fields: obj[]) =
+
+        static member create(id: int) : ChildToMany_DeleteBatch_args =
+            [| id |> box |] |> ChildToMany_DeleteBatch_args
+
+        static member inline create(dto: ^a) : ChildToMany_DeleteBatch_args =
+            [| (^a: (member ``Id``: int) dto) |> box |] |> ChildToMany_DeleteBatch_args
+
+
+    type ChildToMany_DeleteBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToMany_DeleteBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToMany_DeleteBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToMany_DeleteBatch()
+        member _.WithParameters(_args: seq<ChildToMany_DeleteBatch_args>) = ChildToMany_DeleteBatch_Executable()
 
 
     type ChildToMany_GetByRootId_Executable() =
@@ -372,6 +442,24 @@ module UsageCompileTimeTests =
         |> withTransactionFromConnStr
 
 
+    let saveBatched: string -> Root option -> Root -> Async<unit> =
+        saveRoot rootToDto Root_Insert Root_Update
+        |> saveChild rootToToOneDto ChildToOne_Insert ChildToOne_Update
+        |> saveOptChild
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_Insert
+            ChildToOneOpt_Update
+            ChildToOneOpt_Delete
+        |> batchSaveChildren
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_UpdateBatch
+            ChildToMany_DeleteBatch
+        |> withTransactionFromConnStr
+
+
     let saveWithOutput: string -> Root option -> Root -> Async<int option> =
         saveRootWithOutput rootToDto Root_Insert Root_Update
         |> saveChild rootToToOneDto ChildToOne_Insert ChildToOne_Update
@@ -385,11 +473,41 @@ module UsageCompileTimeTests =
         |> withTransactionFromConnStr
 
 
+    let saveWithOutputBatched: string -> Root option -> Root -> Async<int option> =
+        saveRootWithOutput rootToDto Root_Insert Root_Update
+        |> saveChild rootToToOneDto ChildToOne_Insert ChildToOne_Update
+        |> saveOptChild
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_Insert
+            ChildToOneOpt_Update
+            ChildToOneOpt_Delete
+        |> batchSaveChildren
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_UpdateBatch
+            ChildToMany_DeleteBatch
+        |> withTransactionFromConnStr
+
+
     let saveWithoutUpdate: string -> Root option -> Root -> Async<unit> =
         saveRoot rootToDto Root_Insert Root_Update
         |> saveChildWithoutUpdate rootToToOneDto ChildToOne_Insert
         |> saveOptChildWithoutUpdate rootToToOneOptDto (fun dto -> dto.RootId) ChildToOneOpt_Insert ChildToOneOpt_Delete
         |> saveChildrenWithoutUpdate rootToToManyDtos (fun dto -> dto.Id) ChildToMany_Insert ChildToMany_Delete
+        |> withTransactionFromConnStr
+
+
+    let saveWithoutUpdateBatched: string -> Root option -> Root -> Async<unit> =
+        saveRoot rootToDto Root_Insert Root_Update
+        |> saveChildWithoutUpdate rootToToOneDto ChildToOne_Insert
+        |> saveOptChildWithoutUpdate rootToToOneOptDto (fun dto -> dto.RootId) ChildToOneOpt_Insert ChildToOneOpt_Delete
+        |> batchSaveChildrenWithoutUpdate
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_DeleteBatch
         |> withTransactionFromConnStr
 
 

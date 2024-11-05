@@ -40,13 +40,13 @@ module Fling =
             |> Async.Ignore<unit option>
 
 
-    let saveChildrenWithDifferentOldNew
+    let batchSaveChildrenWithDifferentOldNew
         (oldToDtos: 'rootEntity -> 'childDto list)
         (newToDtos: 'rootEntity -> 'childDto list)
         (getId: 'childDto -> 'childDtoId)
-        (insert: 'arg -> 'childDto -> Async<unit>)
-        (update: 'arg -> 'childDto -> Async<unit>)
-        (delete: 'arg -> 'childDtoId -> Async<unit>)
+        (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+        (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+        (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
         (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
         : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
         fun (arg: 'arg) (oldRoot: 'rootEntity option) (newRoot: 'rootEntity) ->
@@ -54,9 +54,7 @@ module Fling =
                 let! result = existingSave arg oldRoot newRoot
 
                 match oldRoot with
-                | None ->
-                    for dto in newToDtos newRoot do
-                        do! insert arg dto
+                | None -> do! batchInsert arg (newToDtos newRoot)
 
                 | Some oldRoot ->
                     let oldChildren = oldToDtos oldRoot
@@ -71,20 +69,66 @@ module Fling =
                     for dto in newChildren do
                         newChildrenById[getId dto] <- dto
 
+                    let toInsert = ResizeArray()
+                    let toUpdate = ResizeArray()
+                    let toDelete = ResizeArray()
+
                     for oldChild in oldChildren do
                         let oldChildId = getId oldChild
 
                         if not (newChildrenById.ContainsKey oldChildId) then
-                            do! delete arg oldChildId
+                            toDelete.Add oldChildId
 
                     for newChild in newChildren do
                         match oldChildrenById.TryGetValue(getId newChild) with
-                        | false, _ -> do! insert arg newChild
-                        | true, oldChild when newChild <> oldChild -> do! update arg newChild
+                        | false, _ -> toInsert.Add newChild
+                        | true, oldChild when newChild <> oldChild -> toUpdate.Add newChild
                         | true, _ -> ()
+
+                    do! batchDelete arg toDelete
+                    do! batchUpdate arg toUpdate
+                    do! batchInsert arg toInsert
 
                 return result
             }
+
+
+    let private asBatched (f: 'arg -> 'childDto -> Async<unit>) : 'arg -> 'childDto seq -> Async<unit> =
+        fun a xs ->
+            async {
+                for x in xs do
+                    do! f a x
+            }
+
+
+    let saveChildrenWithDifferentOldNew
+        (oldToDtos: 'rootEntity -> 'childDto list)
+        (newToDtos: 'rootEntity -> 'childDto list)
+        (getId: 'childDto -> 'childDtoId)
+        (insert: 'arg -> 'childDto -> Async<unit>)
+        (update: 'arg -> 'childDto -> Async<unit>)
+        (delete: 'arg -> 'childDtoId -> Async<unit>)
+        (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+        : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+        batchSaveChildrenWithDifferentOldNew
+            oldToDtos
+            newToDtos
+            getId
+            (asBatched insert)
+            (asBatched update)
+            (asBatched delete)
+            existingSave
+
+
+    let batchSaveChildren
+        (toDtos: 'rootEntity -> 'childDto list)
+        (getId: 'childDto -> 'childDtoId)
+        (insert: 'arg -> 'childDto seq -> Async<unit>)
+        (update: 'arg -> 'childDto seq -> Async<unit>)
+        (delete: 'arg -> 'childDtoId seq -> Async<unit>)
+        (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+        : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+        batchSaveChildrenWithDifferentOldNew toDtos toDtos getId insert update delete existingSave
 
 
     let saveChildren
@@ -96,6 +140,29 @@ module Fling =
         (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
         : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
         saveChildrenWithDifferentOldNew toDtos toDtos getId insert update delete existingSave
+
+
+    let batchSaveChildrenWithoutUpdateWithDifferentOldNew
+        (oldToDtos: 'rootEntity -> 'childDto list)
+        (newToDtos: 'rootEntity -> 'childDto list)
+        (getId: 'childDto -> 'childDtoId)
+        (insert: 'arg -> 'childDto seq -> Async<unit>)
+        (delete: 'arg -> 'childDtoId seq -> Async<unit>)
+        (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+        : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+        batchSaveChildrenWithDifferentOldNew
+            oldToDtos
+            newToDtos
+            getId
+            insert
+            (fun _ dtos ->
+                let dto = Seq.head dtos
+
+                failwith
+                    $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+            )
+            delete
+            existingSave
 
 
     let saveChildrenWithoutUpdateWithDifferentOldNew
@@ -113,10 +180,20 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveChildrenWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+                    $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
             )
             delete
             existingSave
+
+
+    let batchSaveChildrenWithoutUpdate
+        (toDtos: 'rootEntity -> 'childDto list)
+        (getId: 'childDto -> 'childDtoId)
+        (insert: 'arg -> 'childDto seq -> Async<unit>)
+        (delete: 'arg -> 'childDtoId seq -> Async<unit>)
+        (existingSave: 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult>)
+        : 'arg -> 'rootEntity option -> 'rootEntity -> Async<'saveResult> =
+        batchSaveChildrenWithoutUpdateWithDifferentOldNew toDtos toDtos getId insert delete existingSave
 
 
     let saveChildrenWithoutUpdate
@@ -174,7 +251,7 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveOptChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+                    $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
             )
             delete
             existingSave
@@ -228,7 +305,7 @@ module Fling =
             insert
             (fun _ dto ->
                 failwith
-                    $"Update needed in saveChildWithoutUpdate due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}"
+                    $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}"
             )
             existingSave
 

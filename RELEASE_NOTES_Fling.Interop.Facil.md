@@ -3,6 +3,7 @@ Release notes (Fling.Interop.Facil)
 
 ### Unreleased
 
+* Added `batchSaveChildren*` functions for batching inserts/updates/deletes of to-many children
 * Updated Microsoft.Data.SqlClient from 5.2.1 to 5.2.2
 
 ### 0.2.7 (2024-07-29)

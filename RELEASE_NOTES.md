@@ -5,6 +5,10 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
+### Unreleased
+
+* Added `batchSaveChildren*` functions for batching inserts/updates/deletes of to-many children
+
 ### 0.4.0 (2022-10-25)
 
 * **Breaking:** `runLoader` is renamed to `loadParallelWithoutTransaction`

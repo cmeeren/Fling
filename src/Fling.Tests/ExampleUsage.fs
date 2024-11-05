@@ -179,14 +179,29 @@ module DbScripts =
     let insertOrderLine (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderLineDto) : Async<unit> =
         async.Return()
 
+    let insertOrderLines (_conn: SqlConnection, _tran: SqlTransaction) (_dtos: Dtos.OrderLineDto seq) : Async<unit> =
+        async.Return()
+
     let updateOrderLine (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderLineDto) : Async<unit> =
+        async.Return()
+
+    let updateOrderLines (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderLineDto seq) : Async<unit> =
         async.Return()
 
     let deleteOrderLine (_conn: SqlConnection, _tran: SqlTransaction) (_orderLineId: int) : Async<unit> = async.Return()
 
+    let deleteOrderLines (_conn: SqlConnection, _tran: SqlTransaction) (_orderLineIds: int seq) : Async<unit> =
+        async.Return()
+
     let insertOrderAssociatedUser
         (_conn: SqlConnection, _tran: SqlTransaction)
         (_dto: Dtos.OrderAssociatedUserDto)
+        : Async<unit> =
+        async.Return()
+
+    let insertOrderAssociatedUsers
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_dtos: Dtos.OrderAssociatedUserDto seq)
         : Async<unit> =
         async.Return()
 
@@ -196,9 +211,21 @@ module DbScripts =
         : Async<unit> =
         async.Return()
 
+    let updateOrderAssociatedUsers
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_dtos: Dtos.OrderAssociatedUserDto seq)
+        : Async<unit> =
+        async.Return()
+
     let deleteOrderAssociatedUser
         (_conn: SqlConnection, _tran: SqlTransaction)
         (_orderId: int, _userId: int)
+        : Async<unit> =
+        async.Return()
+
+    let deleteOrderAssociatedUsers
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderUserIds: (int * int) seq)
         : Async<unit> =
         async.Return()
 
@@ -285,11 +312,38 @@ module Db =
             |> saveChild orderToPriceDataDto insertPriceData updatePriceData
 
 
+        let private saveBatched =
+            saveRoot orderToDbDto insertOrder updateOrder
+            |> batchSaveChildren
+                orderToLineDtos
+                (fun dto -> dto.OrderLineId)
+                insertOrderLines
+                updateOrderLines
+                deleteOrderLines
+            |> batchSaveChildren
+                orderToAssociatedUserDtos
+                (fun dto -> dto.OrderId, dto.UserId)
+                insertOrderAssociatedUsers
+                updateOrderAssociatedUsers
+                deleteOrderAssociatedUsers
+            |> saveOptChild orderToCouponDto (fun dto -> dto.OrderId) insertCoupon updateCoupon deleteCoupon
+            |> saveChild orderToPriceDataDto insertPriceData updatePriceData
+
+
         let saveChanges connStr (oldOrder: Order option) (newOrder: Order) =
             async {
                 let conn = SqlConnection connStr
                 use tran = createTransaction conn
                 do! save (conn, tran) oldOrder newOrder
+                commit tran
+            }
+
+
+        let saveChangesBatched connStr (oldOrder: Order option) (newOrder: Order) =
+            async {
+                let conn = SqlConnection connStr
+                use tran = createTransaction conn
+                do! saveBatched (conn, tran) oldOrder newOrder
                 commit tran
             }
 
