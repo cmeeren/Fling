@@ -790,7 +790,7 @@ let tests =
                             for newToManyDto in toManyDtos' do
                                 match oldToManyById.TryFind newToManyDto.Id with
                                 | Some oldToManyDto when oldToManyDto <> newToManyDto ->
-                                        nextExpectedId (), arg, newToManyDto
+                                    nextExpectedId (), arg, newToManyDto
                                 | _ -> ()
                         ]
                         "updateToMany"
@@ -800,8 +800,7 @@ let tests =
                         [
                             for newToManyDto in toManyDtos' do
                                 match oldToManyById.TryFind newToManyDto.Id with
-                                | None ->
-                                    nextExpectedId (), arg, newToManyDto
+                                | None -> nextExpectedId (), arg, newToManyDto
                                 | Some _ -> ()
                         ]
                         "insertToMany"
@@ -1160,7 +1159,7 @@ let tests =
                             for newToManyDto in toManyDtos' do
                                 match oldToManyById.TryFind newToManyDto.Id with
                                 | Some oldToManyDto when oldToManyDto <> newToManyDto ->
-                                        nextExpectedId (), arg, newToManyDto
+                                    nextExpectedId (), arg, newToManyDto
                                 | _ -> ()
                         ]
                         "updateToMany"
@@ -1170,8 +1169,7 @@ let tests =
                         [
                             for newToManyDto in toManyDtos' do
                                 match oldToManyById.TryFind newToManyDto.Id with
-                                | None ->
-                                    nextExpectedId (), arg, newToManyDto
+                                | None -> nextExpectedId (), arg, newToManyDto
                                 | Some _ -> ()
                         ]
                         "insertToMany"
