@@ -784,21 +784,27 @@ let tests =
                         ]
                         "deleteToMany"
 
-                    let mutable expectedInsertToManyCalledWith = []
-                    let mutable expectedUpdateToManyCalledWith = []
+                    Expect.sequenceEqual
+                        updateToManyCalledWith
+                        [
+                            for newToManyDto in toManyDtos' do
+                                match oldToManyById.TryFind newToManyDto.Id with
+                                | Some oldToManyDto when oldToManyDto <> newToManyDto ->
+                                        nextExpectedId (), arg, newToManyDto
+                                | _ -> ()
+                        ]
+                        "updateToMany"
 
-                    for newToManyDto in toManyDtos' do
-                        match oldToManyById.TryFind newToManyDto.Id with
-                        | None ->
-                            expectedInsertToManyCalledWith <-
-                                expectedInsertToManyCalledWith @ [ nextExpectedId (), arg, newToManyDto ]
-                        | Some oldToManyDto when oldToManyDto = newToManyDto -> ()
-                        | Some _ ->
-                            expectedUpdateToManyCalledWith <-
-                                expectedUpdateToManyCalledWith @ [ nextExpectedId (), arg, newToManyDto ]
-
-                    Expect.sequenceEqual insertToManyCalledWith expectedInsertToManyCalledWith "insertToMany"
-                    Expect.sequenceEqual updateToManyCalledWith expectedUpdateToManyCalledWith "updateToMany"
+                    Expect.sequenceEqual
+                        insertToManyCalledWith
+                        [
+                            for newToManyDto in toManyDtos' do
+                                match oldToManyById.TryFind newToManyDto.Id with
+                                | None ->
+                                    nextExpectedId (), arg, newToManyDto
+                                | Some _ -> ()
+                        ]
+                        "insertToMany"
                 }
 
 
@@ -1148,21 +1154,27 @@ let tests =
                         ]
                         "deleteToMany"
 
-                    let mutable expectedInsertToManyCalledWith = []
-                    let mutable expectedUpdateToManyCalledWith = []
+                    Expect.sequenceEqual
+                        updateToManyCalledWith
+                        [
+                            for newToManyDto in toManyDtos' do
+                                match oldToManyById.TryFind newToManyDto.Id with
+                                | Some oldToManyDto when oldToManyDto <> newToManyDto ->
+                                        nextExpectedId (), arg, newToManyDto
+                                | _ -> ()
+                        ]
+                        "updateToMany"
 
-                    for newToManyDto in toManyDtos' do
-                        match oldToManyById.TryFind newToManyDto.Id with
-                        | None ->
-                            expectedInsertToManyCalledWith <-
-                                expectedInsertToManyCalledWith @ [ nextExpectedId (), arg, newToManyDto ]
-                        | Some oldToManyDto when oldToManyDto = newToManyDto -> ()
-                        | Some _ ->
-                            expectedUpdateToManyCalledWith <-
-                                expectedUpdateToManyCalledWith @ [ nextExpectedId (), arg, newToManyDto ]
-
-                    Expect.sequenceEqual insertToManyCalledWith expectedInsertToManyCalledWith "insertToMany"
-                    Expect.sequenceEqual updateToManyCalledWith expectedUpdateToManyCalledWith "updateToMany"
+                    Expect.sequenceEqual
+                        insertToManyCalledWith
+                        [
+                            for newToManyDto in toManyDtos' do
+                                match oldToManyById.TryFind newToManyDto.Id with
+                                | None ->
+                                    nextExpectedId (), arg, newToManyDto
+                                | Some _ -> ()
+                        ]
+                        "insertToMany"
                 }
 
 
