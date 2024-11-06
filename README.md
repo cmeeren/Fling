@@ -293,9 +293,8 @@ let loadBatch: 'arg -> OrderDto list -> Async<Order list> =
 Given an old root entity (`None` for initial creation, must be `Some` for updates) and an updated root entity, this
 helper performs the necessary inserts/updates/deletes. It skips updating identical records (compared using `=`).
 
-Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then each
-new child is either inserted or updated (or skipped if it’s equal). For batched to-many child entities, all deletes are
-performed first, then all updates, then all inserts.
+Everything is done in the order you specify here. For to-many child entities, all deletes are performed first, then all
+updates, then all inserts.
 
 For to-many and optional to-one children, you specify a function to get the ID (typically the table’s primary key) of
 the DTO. This will be passed to the `delete` function if the entity needs to be deleted, and is used for to-many

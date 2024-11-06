@@ -5,8 +5,11 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
-### 0.4.1 (2024-11-05)
+### 0.5.0 (2024-11-06)
 
+* **Breaking** (hopefully not in practice): For to-many child entities, all deletes are performed first, then all
+  updates, then all inserts. The previous behavior was deletes first, then each new child (in the order returned by your
+  code) was either inserted or updated.
 * Added `batchSaveChildren*` functions for batching inserts/updates/deletes of to-many children
 
 ### 0.4.0 (2022-10-25)
