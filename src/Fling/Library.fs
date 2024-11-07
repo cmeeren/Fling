@@ -85,9 +85,14 @@ module Fling =
                         | true, oldChild when newChild <> oldChild -> toUpdate.Add newChild
                         | true, _ -> ()
 
-                    do! batchDelete arg toDelete
-                    do! batchUpdate arg toUpdate
-                    do! batchInsert arg toInsert
+                    if toDelete.Count > 0 then
+                        do! batchDelete arg toDelete
+
+                    if toUpdate.Count > 0 then
+                        do! batchUpdate arg toUpdate
+
+                    if toInsert.Count > 0 then
+                        do! batchInsert arg toInsert
 
                 return result
             }

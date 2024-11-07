@@ -5,6 +5,10 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
+### 0.5.1 (2024-11-07)
+
+* Fixed bug introduced in 0.5.0 where `...WithoutUpdate` functions would throw even if there was nothing to update
+
 ### 0.5.0 (2024-11-06)
 
 * **Breaking** (hopefully not in practice): For to-many child entities, all deletes are performed first, then all
