@@ -5,7 +5,7 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
-### Unreleased
+### 0.6.0 (2025-01-13)
 
 * **Breaking:** Now supports loading the root in the same transaction as the children. To achieve this,
   `loadSerialWithTransaction` and `loadBatchSerialWithTransaction` now accept `Async`-wrapped root DTOs, and load these
