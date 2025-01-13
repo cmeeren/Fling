@@ -231,7 +231,7 @@ let tests =
                         |> loadSerialWithTransaction
 
                     let sw = Stopwatch.StartNew()
-                    load () () |> Async.RunSynchronously
+                    load () (async.Return(Some())) |> Async.RunSynchronously |> ignore<unit option>
                     sw.Stop()
 
                     // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
@@ -267,9 +267,11 @@ let tests =
                 let load =
                     createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
                     |> loadChild getChild
+                    |> loadChild getChild
+                    |> loadChild getChild
                     |> loadSerialWithTransaction
 
-                load () () |> Async.RunSynchronously |> ignore
+                load () (async.Return(Some())) |> Async.RunSynchronously |> ignore<unit option>
 
 
         ]
@@ -377,7 +379,7 @@ let tests =
                         |> loadBatchSerialWithTransaction
 
                     let sw = Stopwatch.StartNew()
-                    load () [ () ] |> Async.RunSynchronously |> ignore
+                    load () (async.Return [ () ]) |> Async.RunSynchronously |> ignore<unit list>
                     sw.Stop()
 
                     // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
@@ -419,7 +421,7 @@ let tests =
                     |> batchLoadChildren getChild (fun () -> 0)
                     |> loadBatchSerialWithTransaction
 
-                load () [ () ] |> Async.RunSynchronously |> ignore
+                load () (async.Return [ () ]) |> Async.RunSynchronously |> ignore<unit list>
 
 
         ]

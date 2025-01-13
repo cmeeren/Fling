@@ -7,7 +7,12 @@ Fling.Interop.Facil.
 
 ### Unreleased
 
-* `loadSerialWithTransaction` and `loadBatchSerialWithTransaction` now use `TransactionScopeOption.Required` instead of
+* **Breaking:** Now supports loading the root in the same transaction as the children. To achieve this,
+  `loadSerialWithTransaction` and `loadBatchSerialWithTransaction` now accept `Async`-wrapped root DTOs, and load these
+  in the same transaction as the children. The previous functions can be accessed under the new names
+  `loadChildrenSerialWithTransaction` and `loadChildrenBatchSerialWithTransaction`.
+* **Possibly breaking:** `loadSerialWithTransaction` and `loadBatchSerialWithTransaction` now use
+  `TransactionScopeOption.Required` instead of
   `TransactionScopeOption.RequiresNew` to avoid locking issues. This is also likely to be more correct in the contexts
   in which Fling is used.
 

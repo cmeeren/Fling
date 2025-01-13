@@ -358,14 +358,8 @@ module Db =
             }
 
 
-        let byIdWithTransaction connStr (OrderId oid) =
-            async {
-                match! getOrderById connStr oid with
-                | None -> return None
-                | Some orderDto ->
-                    let! order = loadWithTransaction connStr orderDto
-                    return Some order
-            }
+        let byIdWithTransaction connStr (OrderId oid) : Async<Order option> =
+            getOrderById connStr oid |> loadWithTransaction connStr
 
 
         let allWithoutTransaction connStr =
@@ -375,8 +369,5 @@ module Db =
             }
 
 
-        let allWithTransaction connStr =
-            async {
-                let! orderDtos = getAllOrders connStr
-                return! loadBatchWithTransaction connStr orderDtos
-            }
+        let allWithTransaction connStr : Async<Order list> =
+            getAllOrders connStr |> loadBatchWithTransaction connStr
