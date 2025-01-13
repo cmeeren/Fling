@@ -5,6 +5,12 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
+### Unreleased
+
+* `loadSerialWithTransaction` and `loadBatchSerialWithTransaction` now use `TransactionScopeOption.Required` instead of
+  `TransactionScopeOption.RequiresNew` to avoid locking issues. This is also likely to be more correct in the contexts
+  in which Fling is used.
+
 ### 0.5.1 (2024-11-07)
 
 * Fixed bug introduced in 0.5.0 where `...WithoutUpdate` functions would throw even if there was nothing to update

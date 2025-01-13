@@ -360,7 +360,7 @@ module Fling =
         loader.Load true arg
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.RequiresNew. Does not load child entities in
+    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
     /// parallel.
     let loadSerialWithTransaction
         (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
@@ -369,7 +369,7 @@ module Fling =
         : Async<'loadResult> =
         async {
             use __ =
-                new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled)
+                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
 
             return! loader.Load false arg rootDto
         }
@@ -380,7 +380,7 @@ module Fling =
         loader.Load true arg
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.RequiresNew. Does not load child entities in
+    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
     /// parallel.
     let loadBatchSerialWithTransaction
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
@@ -389,7 +389,7 @@ module Fling =
         : Async<'loadResult list> =
         async {
             use __ =
-                new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled)
+                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
 
             return! loader.Load false arg rootDto
         }
