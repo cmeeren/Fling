@@ -15,6 +15,8 @@ Fling.Interop.Facil.
   `TransactionScopeOption.Required` instead of
   `TransactionScopeOption.RequiresNew` to avoid locking issues. This is also likely to be more correct in the contexts
   in which Fling is used.
+* Added `loadSerialWithSnapshotTransaction` and `loadBatchSerialWithSnapshotTransaction` which are identical to their
+  non-`Snapshot` counterparts but use `TransactionIsolationLevel.Snapshot`.
 
 ### 0.5.1 (2024-11-07)
 
