@@ -369,8 +369,7 @@ module Fling =
         rootDto
         : Async<'loadResult> =
         async {
-            use __ =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
+            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
 
             return! loader.Load false arg rootDto
         }
@@ -384,8 +383,7 @@ module Fling =
         (rootDto: Async<'rootDto option>)
         : Async<'loadResult option> =
         async {
-            use __ =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
+            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
 
             match! rootDto with
             | None -> return None
@@ -407,8 +405,7 @@ module Fling =
         rootDto
         : Async<'loadResult list> =
         async {
-            use __ =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
+            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
 
             return! loader.Load false arg rootDto
         }
@@ -422,8 +419,7 @@ module Fling =
         (rootDtos: Async<#seq<'rootDto>>)
         : Async<'loadResult list> =
         async {
-            use __ =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
+            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
 
             let! rootDtos = rootDtos
             return! loader.Load false arg (Seq.toList rootDtos)
