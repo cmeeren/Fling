@@ -360,9 +360,8 @@ module Fling =
         loader.Load true arg
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
-    /// parallel. Prefer using loadSerialWithTransaction over this, as this doesn't load the children in a transaction
-    /// with the root (parent).
+    /// Runs the loader in a transaction. Does not load child entities in parallel. Prefer using
+    /// loadSerialWithTransaction over this, as this doesn't load the children in a transaction with the root (parent).
     let loadChildrenSerialWithTransaction
         (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
         arg
@@ -375,8 +374,7 @@ module Fling =
         }
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
-    /// parallel.
+    /// Runs the loader in a transaction. Does not load child entities in parallel.
     let loadSerialWithTransaction
         (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
         arg
@@ -396,9 +394,9 @@ module Fling =
         loader.Load true arg
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
-    /// parallel. Prefer using loadBatchSerialWithTransaction over this, as this doesn't load the children in a
-    /// transaction with the root (parent).
+    /// Runs the loader in a transaction. Does not load child entities in parallel. Prefer using
+    /// loadBatchSerialWithTransaction over this, as this doesn't load the children in a transaction with the root
+    /// (parent).
     let loadChildrenBatchSerialWithTransaction
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
         arg
@@ -411,7 +409,7 @@ module Fling =
         }
 
 
-    /// Runs the loader in a TransactionScope with TransactionScopeOption.Required. Does not load child entities in
+    /// Runs the loader in a transaction. Does not load child entities in
     /// parallel.
     let loadBatchSerialWithTransaction
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
