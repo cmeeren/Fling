@@ -1,5 +1,22 @@
 Release notes (Fling.Interop.Facil)
-==============
+
+### 0.3.0 (2025-01-16)
+
+See the v0.7.0 notes in [RELEASE_NOTES.md](RELEASE_NOTES.md) for more background on the changes in this version.
+
+* **Breaking:** The functions `loadChild`, `loadOptChild`, `loadChildren`, `batchLoadChild`, `batchLoadOptChild`, and
+  `batchLoadChildren` now work with a loader where `'arg` is `SqlConnection * SqlTransaction` instead of the previous
+  `string` (a connection string). This change is necessary to be able to load everything in a transaction after the
+  changes in Fling 0.7.0.
+* **Breaking:** Renamed `withTransactionFromConnStr` to `saveWithTransactionFromConnStr` for consistency with the new
+  helpers mentioned below.
+* Added `loadWithTransactionFromConnStr`, `loadWithSnapshotTransactionFromConnStr`,
+  `loadBatchWithTransactionFromConnStr`, and `loadBatchWithSnapshotTransactionFromConnStr` that can be used in place of
+  the main library's `loadSerial` and `loadBatchSerial` (previously: `loadSerialWithTransaction` and
+  `loadBatchSerialWithTransaction`). These helpers open a connection, start a transaction and run the loader using that
+  connection/transaction. (The loader's `'arg` must be `SqlConnection * SqlTransaction`.)
+* Added `loadOne`, `loadOneNoParam`, `loadMany`, and `loadManyNoParam` to simplify usage of the load function created
+  using the helpers above with Facil scripts.
 
 ### 0.2.8 (2024-11-05)
 

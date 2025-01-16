@@ -1,5 +1,7 @@
 module Tests
 
+open Microsoft.Data.SqlClient
+
 
 
 [<AutoOpen>]
@@ -65,7 +67,6 @@ module Dtos =
 [<AutoOpen>]
 module FacilMock =
 
-    open Microsoft.Data.SqlClient
 
 
     type rootIdList() =
@@ -413,20 +414,20 @@ module UsageCompileTimeTests =
     open Fling.Interop.Facil.Fling
 
 
-    let load: string -> RootDto -> Async<Root> =
+    let load: (SqlConnection * SqlTransaction -> Async<RootDto option>) -> Async<Root option> =
         createLoader dtosToRoot (fun dto -> dto.Id)
         |> loadChild ChildToOne_GetByRootId
         |> loadOptChild ChildToOneOpt_GetByRootId
         |> loadChildren ChildToMany_GetByRootId
-        |> loadParallelWithoutTransaction
+        |> loadWithTransactionFromConnStr ""
 
 
-    let loadBatch: string -> RootDto list -> Async<Root list> =
+    let loadBatch: (SqlConnection * SqlTransaction -> Async<RootDto seq>) -> Async<Root list> =
         createBatchLoader dtosToRoot (fun dto -> dto.Id)
         |> batchLoadChild ChildToOne_GetByRootIds (fun dto -> dto.RootId)
         |> batchLoadOptChild ChildToOneOpt_GetByRootIds (fun dto -> dto.RootId)
         |> batchLoadChildren ChildToMany_GetByRootIds (fun dto -> dto.RootId)
-        |> loadBatchParallelWithoutTransaction
+        |> loadBatchWithTransactionFromConnStr ""
 
 
     let save: string -> Root option -> Root -> Async<unit> =
@@ -439,7 +440,7 @@ module UsageCompileTimeTests =
             ChildToOneOpt_Update
             ChildToOneOpt_Delete
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) ChildToMany_Insert ChildToMany_Update ChildToMany_Delete
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveBatched: string -> Root option -> Root -> Async<unit> =
@@ -457,7 +458,7 @@ module UsageCompileTimeTests =
             ChildToMany_InsertBatch
             ChildToMany_UpdateBatch
             ChildToMany_DeleteBatch
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithOutput: string -> Root option -> Root -> Async<int option> =
@@ -470,7 +471,7 @@ module UsageCompileTimeTests =
             ChildToOneOpt_Update
             ChildToOneOpt_Delete
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) ChildToMany_Insert ChildToMany_Update ChildToMany_Delete
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithOutputBatched: string -> Root option -> Root -> Async<int option> =
@@ -488,7 +489,7 @@ module UsageCompileTimeTests =
             ChildToMany_InsertBatch
             ChildToMany_UpdateBatch
             ChildToMany_DeleteBatch
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithoutUpdate: string -> Root option -> Root -> Async<unit> =
@@ -496,7 +497,7 @@ module UsageCompileTimeTests =
         |> saveChildWithoutUpdate rootToToOneDto ChildToOne_Insert
         |> saveOptChildWithoutUpdate rootToToOneOptDto (fun dto -> dto.RootId) ChildToOneOpt_Insert ChildToOneOpt_Delete
         |> saveChildrenWithoutUpdate rootToToManyDtos (fun dto -> dto.Id) ChildToMany_Insert ChildToMany_Delete
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithoutUpdateBatched: string -> Root option -> Root -> Async<unit> =
@@ -508,7 +509,7 @@ module UsageCompileTimeTests =
             (fun dto -> dto.Id)
             ChildToMany_InsertBatch
             ChildToMany_DeleteBatch
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
 
@@ -524,7 +525,7 @@ module IgnoreCompileTimeTests =
         |> saveChild rootToToOneDto FacilIgnore FacilIgnore
         |> saveOptChild rootToToOneOptDto (fun dto -> dto.RootId) FacilIgnore FacilIgnore FacilIgnore
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) FacilIgnore FacilIgnore FacilIgnore
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithOutput: string -> Root option -> Root -> Async<int option> =
@@ -532,7 +533,7 @@ module IgnoreCompileTimeTests =
         |> saveChild rootToToOneDto FacilIgnore FacilIgnore
         |> saveOptChild rootToToOneOptDto (fun dto -> dto.RootId) FacilIgnore FacilIgnore FacilIgnore
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) FacilIgnore FacilIgnore FacilIgnore
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithoutUpdate: string -> Root option -> Root -> Async<unit> =
@@ -540,7 +541,7 @@ module IgnoreCompileTimeTests =
         |> saveChildWithoutUpdate rootToToOneDto FacilIgnore
         |> saveOptChildWithoutUpdate rootToToOneOptDto (fun dto -> dto.RootId) FacilIgnore FacilIgnore
         |> saveChildrenWithoutUpdate rootToToManyDtos (fun dto -> dto.Id) FacilIgnore FacilIgnore
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
 
@@ -556,7 +557,7 @@ module ThrowCompileTimeTests =
         |> saveChild rootToToOneDto FacilThrow FacilThrow
         |> saveOptChild rootToToOneOptDto (fun dto -> dto.RootId) FacilThrow FacilThrow FacilThrow
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) FacilThrow FacilThrow FacilThrow
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithOutput: string -> Root option -> Root -> Async<int option> =
@@ -564,7 +565,7 @@ module ThrowCompileTimeTests =
         |> saveChild rootToToOneDto FacilThrow FacilThrow
         |> saveOptChild rootToToOneOptDto (fun dto -> dto.RootId) FacilThrow FacilThrow FacilThrow
         |> saveChildren rootToToManyDtos (fun dto -> dto.Id) FacilThrow FacilThrow FacilThrow
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr
 
 
     let saveWithoutUpdate: string -> Root option -> Root -> Async<unit> =
@@ -572,4 +573,4 @@ module ThrowCompileTimeTests =
         |> saveChildWithoutUpdate rootToToOneDto FacilThrow
         |> saveOptChildWithoutUpdate rootToToOneOptDto (fun dto -> dto.RootId) FacilThrow FacilThrow
         |> saveChildrenWithoutUpdate rootToToManyDtos (fun dto -> dto.Id) FacilThrow FacilThrow
-        |> withTransactionFromConnStr
+        |> saveWithTransactionFromConnStr

@@ -1,6 +1,7 @@
 ﻿namespace Fling.Interop.Facil
 
 open System.ComponentModel
+open System.Data
 open Microsoft.Data.SqlClient
 open Fling
 
@@ -42,7 +43,7 @@ type FacilThrow() =
 module Fling =
 
 
-    let withTransactionFromConnStr f connStr oldEntity newEntity =
+    let saveWithTransactionFromConnStr f connStr oldEntity newEntity =
         async {
             let! ct = Async.CancellationToken
             use conn = new SqlConnection(connStr)
@@ -51,6 +52,160 @@ module Fling =
             let! res = f (conn, tran) oldEntity newEntity
             do! tran.CommitAsync ct |> Async.AwaitTask
             return res
+        }
+
+
+    /// Runs the loader serially in a transaction using IsolationLevel.Serializable.
+    let loadWithTransactionFromConnStr
+        (connStr: string)
+        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'loadResult, SqlConnection * SqlTransaction>)
+        (getRootDto: SqlConnection * SqlTransaction -> Async<'rootDto option>)
+        : Async<'loadResult option> =
+        async {
+            let! ct = Async.CancellationToken
+            use conn = new SqlConnection(connStr)
+            do! conn.OpenAsync(ct) |> Async.AwaitTask
+            use tran = conn.BeginTransaction()
+            return! Fling.loadSerial loader (conn, tran) getRootDto
+        }
+
+
+    /// Runs the loader serially in a transaction using IsolationLevel.Snapshot.
+    let loadWithSnapshotTransactionFromConnStr
+        (connStr: string)
+        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'loadResult, SqlConnection * SqlTransaction>)
+        (getRootDto: SqlConnection * SqlTransaction -> Async<'rootDto option>)
+        : Async<'loadResult option> =
+        async {
+            let! ct = Async.CancellationToken
+            use conn = new SqlConnection(connStr)
+            do! conn.OpenAsync(ct) |> Async.AwaitTask
+            use tran = conn.BeginTransaction(IsolationLevel.Snapshot)
+            return! Fling.loadSerial loader (conn, tran) getRootDto
+        }
+
+
+    /// Runs the batch loader serially in a transaction using IsolationLevel.Serializable.
+    let loadBatchWithTransactionFromConnStr
+        (connStr: string)
+        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'loadResult, SqlConnection * SqlTransaction>)
+        (getRootDto: SqlConnection * SqlTransaction -> Async<#seq<'rootDto>>)
+        : Async<'loadResult list> =
+        async {
+            let! ct = Async.CancellationToken
+            use conn = new SqlConnection(connStr)
+            do! conn.OpenAsync(ct) |> Async.AwaitTask
+            use tran = conn.BeginTransaction()
+            return! Fling.loadBatchSerial loader (conn, tran) getRootDto
+        }
+
+
+    /// Runs the batch loader serially in a transaction using IsolationLevel.Snapshot.
+    let loadBatchWithSnapshotTransactionFromConnStr
+        (connStr: string)
+        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'loadResult, SqlConnection * SqlTransaction>)
+        (getRootDto: SqlConnection * SqlTransaction -> Async<#seq<'rootDto>>)
+        : Async<'loadResult list> =
+        async {
+            let! ct = Async.CancellationToken
+            use conn = new SqlConnection(connStr)
+            do! conn.OpenAsync(ct) |> Async.AwaitTask
+            use tran = conn.BeginTransaction(IsolationLevel.Snapshot)
+            return! Fling.loadBatchSerial loader (conn, tran) getRootDto
+        }
+
+
+    let inline loadOne< ^script, ^script_executable, 'rootDto, 'param, 'loadResult
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
+        and ^script: (member WithParameters: 'param -> ^script_executable)
+        and ^script_executable: (member AsyncExecuteSingle: unit -> Async<'rootDto option>)>
+        (load: (SqlConnection * SqlTransaction -> Async<'rootDto option>) -> Async<'loadResult option>)
+        (_scriptCtor: unit -> ^script)
+        (param: 'param)
+        : Async<'loadResult option> =
+        async {
+            let getRootDto (conn, tran) =
+                async {
+                    let withConn =
+                        (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                     Some
+                                                                                                                         tran))
+
+                    let executable =
+                        (^script: (member WithParameters: 'param -> ^script_executable) withConn, param)
+
+                    return! (^script_executable: (member AsyncExecuteSingle: unit -> Async<'rootDto option>) executable)
+                }
+
+            return! load getRootDto
+        }
+
+
+    let inline loadOneNoParam< ^script, 'rootDto, 'param, 'loadResult
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
+        and ^script: (member AsyncExecuteSingle: unit -> Async<'rootDto option>)>
+        (load: (SqlConnection * SqlTransaction -> Async<'rootDto option>) -> Async<'loadResult option>)
+        (_scriptCtor: unit -> ^script)
+        : Async<'loadResult option> =
+        async {
+            let getRootDto (conn, tran) =
+                async {
+                    let script =
+                        (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                     Some
+                                                                                                                         tran))
+
+                    return! (^script: (member AsyncExecuteSingle: unit -> Async<'rootDto option>) script)
+                }
+
+            return! load getRootDto
+        }
+
+
+    let inline loadMany< ^script, ^script_executable, 'rootDto, 'param, 'loadResult
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
+        and ^script: (member WithParameters: 'param -> ^script_executable)
+        and ^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'rootDto>>)>
+        (loadBatch: (SqlConnection * SqlTransaction -> Async<ResizeArray<'rootDto>>) -> Async<'loadResult list>)
+        (_scriptCtor: unit -> ^script)
+        (param: 'param)
+        : Async<'loadResult list> =
+        async {
+            let getRootDto (conn, tran) =
+                async {
+                    let withConn =
+                        (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                     Some
+                                                                                                                         tran))
+
+                    let executable =
+                        (^script: (member WithParameters: 'param -> ^script_executable) withConn, param)
+
+                    return! (^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'rootDto>>) executable)
+                }
+
+            return! loadBatch getRootDto
+        }
+
+
+    let inline loadManyNoParam< ^script, 'rootDto, 'param, 'loadResult
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
+        and ^script: (member AsyncExecute: unit -> Async<ResizeArray<'rootDto>>)>
+        (loadBatch: (SqlConnection * SqlTransaction -> Async<ResizeArray<'rootDto>>) -> Async<'loadResult list>)
+        (_scriptCtor: unit -> ^script)
+        : Async<'loadResult list> =
+        async {
+            let getRootDto (conn, tran) =
+                async {
+                    let script =
+                        (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                     Some
+                                                                                                                         tran))
+
+                    return! (^script: (member AsyncExecute: unit -> Async<ResizeArray<'rootDto>>) script)
+                }
+
+            return! loadBatch getRootDto
         }
 
 
@@ -712,18 +867,19 @@ module Fling =
 
 
     let inline loadChild< ^script, ^script_executable, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: 'rootDtoId -> ^script_executable)
         and ^script_executable: (member AsyncExecuteSingle: unit -> Async<'childDto option>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
-        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, string>)
+        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (rootId: 'rootDtoId) : Async<'childDto> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (rootId: 'rootDtoId) : Async<'childDto> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let executable =
                     (^script: (member WithParameters: 'rootDtoId -> ^script_executable) withConn, rootId)
@@ -742,18 +898,19 @@ module Fling =
 
 
     let inline loadOptChild< ^script, ^script_executable, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: 'rootDtoId -> ^script_executable)
         and ^script_executable: (member AsyncExecuteSingle: unit -> Async<'childDto option>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
-        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto option -> 'loadResult, string>)
+        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto option -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (param: 'rootDtoId) : Async<'childDto option> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (param: 'rootDtoId) : Async<'childDto option> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let executable =
                     (^script: (member WithParameters: 'rootDtoId -> ^script_executable) withConn, param)
@@ -767,18 +924,19 @@ module Fling =
 
 
     let inline loadChildren< ^script, ^script_executable, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: 'rootDtoId -> ^script_executable)
         and ^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'childDto>>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
-        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, string>)
+        (loader: Fling.Loader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (param: 'rootDtoId) : Async<'childDto list> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (param: 'rootDtoId) : Async<'childDto list> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let executable =
                     (^script: (member WithParameters: 'rootDtoId -> ^script_executable) withConn, param)
@@ -792,20 +950,21 @@ module Fling =
 
 
     let inline batchLoadChild< ^script, ^script_executable, ^tableType, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: seq< ^tableType > -> ^script_executable)
         and ^tableType: (static member create: ^rootDtoId -> ^tableType)
         and ^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'childDto>>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
         (getRootId: 'childDto -> 'rootDtoId)
-        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, string>)
+        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (rootIds: 'rootDtoId list) : Async<'childDto list> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (rootIds: 'rootDtoId list) : Async<'childDto list> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let tableTypeParams =
                     rootIds
@@ -823,20 +982,22 @@ module Fling =
 
 
     let inline batchLoadOptChild< ^script, ^script_executable, ^tableType, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: seq< ^tableType > -> ^script_executable)
         and ^tableType: (static member create: ^rootDtoId -> ^tableType)
         and ^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'childDto>>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
         (getRootId: 'childDto -> 'rootDtoId)
-        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto option -> 'loadResult, string>)
+        (loader:
+            Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto option -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (rootIds: 'rootDtoId list) : Async<'childDto list> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (rootIds: 'rootDtoId list) : Async<'childDto list> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let tableTypeParams =
                     rootIds
@@ -854,20 +1015,21 @@ module Fling =
 
 
     let inline batchLoadChildren< ^script, ^script_executable, ^tableType, 'rootDto, 'rootDtoId, 'childDto, 'loadResult
-        when ^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script)
+        when ^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script)
         and ^script: (member WithParameters: seq< ^tableType > -> ^script_executable)
         and ^tableType: (static member create: ^rootDtoId -> ^tableType)
         and ^script_executable: (member AsyncExecute: unit -> Async<ResizeArray<'childDto>>)
         and 'rootDtoId: equality>
         (_scriptCtor: unit -> ^script)
         (getRootId: 'childDto -> 'rootDtoId)
-        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, string>)
+        (loader: Fling.BatchLoader<'rootDto, 'rootDtoId, 'childDto list -> 'loadResult, SqlConnection * SqlTransaction>)
         =
-        let loadChild (connString: string) (rootIds: 'rootDtoId list) : Async<'childDto list> =
+        let loadChild (conn: SqlConnection, tran: SqlTransaction) (rootIds: 'rootDtoId list) : Async<'childDto list> =
             async {
                 let withConn =
-                    (^script: (static member WithConnection: string * (SqlConnection -> unit) option -> ^script) (connString,
-                                                                                                                  None))
+                    (^script: (static member WithConnection: SqlConnection -> SqlTransaction option -> ^script) (conn,
+                                                                                                                 Some
+                                                                                                                     tran))
 
                 let tableTypeParams =
                     rootIds

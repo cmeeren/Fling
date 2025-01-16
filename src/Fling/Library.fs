@@ -1,7 +1,5 @@
 ﻿namespace Fling
 
-open System.Transactions
-
 
 module Fling =
 
@@ -355,112 +353,65 @@ module Fling =
         }
 
 
-    /// Runs the loader without a transaction. Loads child entities in parallel.
-    let loadParallelWithoutTransaction (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
-        loader.Load true arg
-
-
-    /// Runs the loader in a transaction. Does not load child entities in parallel. Prefer using
-    /// loadSerialWithTransaction over this, as this doesn't load the children in a transaction with the root (parent).
-    let loadChildrenSerialWithTransaction
+    let private load'
+        loadInParallel
         (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
         arg
-        rootDto
-        : Async<'loadResult> =
-        async {
-            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
-
-            return! loader.Load false arg rootDto
-        }
-
-
-    /// Runs the loader in a transaction with IsolationLevel.Serializable. Does not load child entities in parallel.
-    let loadSerialWithTransaction
-        (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
-        arg
-        (rootDto: Async<'rootDto option>)
+        (getRootDto: 'arg -> Async<'rootDto option>)
         : Async<'loadResult option> =
         async {
-            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
-
-            match! rootDto with
+            match! getRootDto arg with
             | None -> return None
-            | Some rootDto -> return! loader.Load false arg rootDto |> Async.map Some
+            | Some rootDto -> return! loader.Load loadInParallel arg rootDto |> Async.map Some
         }
 
 
-    /// Runs the loader in a transaction with IsolationLevel.Snapshot. Does not load child entities in parallel.
-    let loadSerialWithSnapshotTransaction
+    let private loadBatch'
+        loadInParallel
+        (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
+        arg
+        (getRootDtos: 'arg -> Async<#seq<'rootDto>>)
+        : Async<'loadResult list> =
+        async {
+            let! rootDtos = getRootDtos arg
+            return! loader.Load loadInParallel arg (Seq.toList rootDtos)
+        }
+
+
+    /// Runs the loader, loading all child entities in parallel.
+    let loadParallel
         (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
-        arg
-        (rootDto: Async<'rootDto option>)
+        (arg: 'arg)
+        (getRootDto: 'arg -> Async<'rootDto option>)
         : Async<'loadResult option> =
-        async {
-            use __ =
-                new TransactionScope(
-                    TransactionScopeOption.Required,
-                    TransactionOptions(IsolationLevel = IsolationLevel.Snapshot),
-                    TransactionScopeAsyncFlowOption.Enabled
-                )
-
-            match! rootDto with
-            | None -> return None
-            | Some rootDto -> return! loader.Load false arg rootDto |> Async.map Some
-        }
+        load' true loader arg getRootDto
 
 
-    /// Runs the loader without a transaction. Loads child entities in parallel.
-    let loadBatchParallelWithoutTransaction (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>) arg =
-        loader.Load true arg
-
-
-    /// Runs the loader in a transaction. Does not load child entities in parallel. Prefer using
-    /// loadBatchSerialWithTransaction over this, as this doesn't load the children in a transaction with the root
-    /// (parent).
-    let loadChildrenBatchSerialWithTransaction
+    /// Runs the batch loader, loading all child entities in parallel.
+    let loadBatchParallel
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
-        arg
-        rootDto
+        (arg: 'arg)
+        (getRootDto: 'arg -> Async<#seq<'rootDto>>)
         : Async<'loadResult list> =
-        async {
-            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
-
-            return! loader.Load false arg rootDto
-        }
+        loadBatch' true loader arg getRootDto
 
 
-    /// Runs the loader in a transaction with IsolationLevel.Serializable. Does not load child entities in parallel.
-    let loadBatchSerialWithTransaction
+    /// Runs the loader, loading all child entities serially.
+    let loadSerial
+        (loader: Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
+        (arg: 'arg)
+        (getRootDto: 'arg -> Async<'rootDto option>)
+        : Async<'loadResult option> =
+        load' false loader arg getRootDto
+
+
+    /// Runs the batch loader, loading all child entities serially.
+    let loadBatchSerial
         (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
-        arg
-        (rootDtos: Async<#seq<'rootDto>>)
+        (arg: 'arg)
+        (getRootDto: 'arg -> Async<#seq<'rootDto>>)
         : Async<'loadResult list> =
-        async {
-            use __ = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
-
-            let! rootDtos = rootDtos
-            return! loader.Load false arg (Seq.toList rootDtos)
-        }
-
-
-    /// Runs the loader in a transaction with IsolationLevel.Snapshot. Does not load child entities in
-    /// parallel.
-    let loadBatchSerialWithSnapshotTransaction
-        (loader: BatchLoader<'rootDto, 'rootDtoId, 'loadResult, 'arg>)
-        arg
-        (rootDtos: Async<#seq<'rootDto>>)
-        : Async<'loadResult list> =
-        async {
-            use __ =
-                new TransactionScope(
-                    TransactionScopeOption.Required,
-                    TransactionOptions(IsolationLevel = IsolationLevel.Snapshot),
-                    TransactionScopeAsyncFlowOption.Enabled
-                )
-
-            let! rootDtos = rootDtos
-            return! loader.Load false arg (Seq.toList rootDtos)
-        }
+        loadBatch' false loader arg getRootDto
 
 
     let loadChild

@@ -1,7 +1,6 @@
 module Tests
 
 open System.Diagnostics
-open System.Transactions
 open Expecto
 open Hedgehog
 open Fling.Fling
@@ -152,9 +151,11 @@ let tests =
                 Property.check
                 <| property {
 
-                    let! arg = GenX.auto<int>
+                    let! arg = GenX.auto<char>
 
                     let! rootDto, toOneDto, toOneOptDto, toManyDtos = Gen.rootDtoWithChildDtos
+
+                    let getRootDto = fun (_arg: char) -> async.Return(Some rootDto)
 
                     let mutable getToOneForRootCalledWith = None
 
@@ -185,13 +186,13 @@ let tests =
                         |> loadChild getToOneForRoot
                         |> loadChild getToOneOptForRoot
                         |> loadChild getToManyForRoot
-                        |> loadParallelWithoutTransaction
+                        |> loadParallel
 
                     let expected = dtosToRoot rootDto toOneDto toOneOptDto toManyDtos
 
-                    let actual = load arg rootDto |> Async.RunSynchronously
+                    let actual = load arg getRootDto |> Async.RunSynchronously
 
-                    Expect.equal actual expected ""
+                    Expect.equal actual (Some expected) ""
                     Expect.equal getToOneForRootCalledWith (Some(arg, rootDto.Id)) ""
                     Expect.equal getToOneOptForRootCalledWith (Some(arg, rootDto.Id)) ""
                     Expect.equal getToManyForRootCalledWith (Some(arg, rootDto.Id)) ""
@@ -208,10 +209,14 @@ let tests =
                         |> loadChild getChild
                         |> loadChild getChild
                         |> loadChild getChild
-                        |> loadParallelWithoutTransaction
+                        |> loadParallel
 
                     let sw = Stopwatch.StartNew()
-                    load () () |> Async.RunSynchronously
+
+                    load () (fun () -> async.Return(Some()))
+                    |> Async.RunSynchronously
+                    |> ignore<unit option>
+
                     sw.Stop()
 
                     Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
@@ -228,50 +233,20 @@ let tests =
                         |> loadChild getChild
                         |> loadChild getChild
                         |> loadChild getChild
-                        |> loadSerialWithTransaction
+                        |> loadSerial
 
                     let sw = Stopwatch.StartNew()
-                    load () (async.Return(Some())) |> Async.RunSynchronously |> ignore<unit option>
+
+                    load () (fun () -> async.Return(Some()))
+                    |> Async.RunSynchronously
+                    |> ignore<unit option>
+
                     sw.Stop()
 
                     // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
                     // ~1000ms, so 2500 seems OK.
                     Expect.isGreaterThan sw.ElapsedMilliseconds 2500L ""
             )
-
-
-            testCase "Does not run the loaders in a transaction if using loadParallelWithoutTransaction"
-            <| fun () ->
-                let getChild _ _ =
-                    async {
-                        Expect.isNull Transaction.Current ""
-                        return [ () ]
-                    }
-
-                let load =
-                    createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> loadChild getChild
-                    |> loadParallelWithoutTransaction
-
-                load () () |> Async.RunSynchronously |> ignore
-
-
-            testCase "Runs the loaders in a transaction if using loadSerialWithTransaction"
-            <| fun () ->
-                let getChild _ _ =
-                    async {
-                        Expect.isNotNull Transaction.Current ""
-                        return [ () ]
-                    }
-
-                let load =
-                    createLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadChild getChild
-                    |> loadSerialWithTransaction
-
-                load () (async.Return(Some())) |> Async.RunSynchronously |> ignore<unit option>
 
 
         ]
@@ -285,7 +260,7 @@ let tests =
                 Property.check
                 <| property {
 
-                    let! arg = GenX.auto<int>
+                    let! arg = Gen.unicode
 
                     let! dtos = Gen.rootDtoWithChildDtos |> GenX.eList 1 10
 
@@ -318,9 +293,13 @@ let tests =
                         |> batchLoadChild getToOneForRoots (fun dto -> dto.RootId)
                         |> batchLoadOptChild getToOneOptForRoots (fun dto -> dto.RootId)
                         |> batchLoadChildren getToManyForRoots (fun dto -> dto.RootId)
-                        |> loadBatchParallelWithoutTransaction
+                        |> loadBatchParallel
 
                     let rootDtos = dtos |> List.map (fun (x, _, _, _) -> x)
+
+                    let getRootDtos =
+                        fun (_arg: char) -> dtos |> List.map (fun (x, _, _, _) -> x) |> async.Return
+
                     let rootDtoIds = rootDtos |> List.map (fun x -> x.Id)
 
                     let expected =
@@ -329,7 +308,7 @@ let tests =
                             dtosToRoot rootDto toOneDto toOneOptDto toManyDtos
                         )
 
-                    let actual = load arg rootDtos |> Async.RunSynchronously
+                    let actual = load arg getRootDtos |> Async.RunSynchronously
 
                     Expect.equal actual expected ""
                     Expect.equal getToOneForRootCalledWith (Some(arg, rootDtoIds)) ""
@@ -352,10 +331,10 @@ let tests =
                         |> batchLoadChild getChild (fun () -> 0)
                         |> batchLoadOptChild getChild (fun () -> 0)
                         |> batchLoadChildren getChild (fun () -> 0)
-                        |> loadBatchParallelWithoutTransaction
+                        |> loadBatchParallel
 
                     let sw = Stopwatch.StartNew()
-                    load () [ () ] |> Async.RunSynchronously |> ignore
+                    load () (fun () -> async.Return [ () ]) |> Async.RunSynchronously |> ignore
                     sw.Stop()
 
                     Expect.isLessThan sw.ElapsedMilliseconds 2500L ""
@@ -376,52 +355,20 @@ let tests =
                         |> batchLoadChild getChild (fun () -> 0)
                         |> batchLoadOptChild getChild (fun () -> 0)
                         |> batchLoadChildren getChild (fun () -> 0)
-                        |> loadBatchSerialWithTransaction
+                        |> loadBatchSerial
 
                     let sw = Stopwatch.StartNew()
-                    load () (async.Return [ () ]) |> Async.RunSynchronously |> ignore<unit list>
+
+                    load () (fun () -> async.Return [ () ])
+                    |> Async.RunSynchronously
+                    |> ignore<unit list>
+
                     sw.Stop()
 
                     // Should be > 3000, but often fails on CI with a few ms less. In any case, parallel will be
                     // ~1000ms, so 2500 seems OK.
                     Expect.isGreaterThan sw.ElapsedMilliseconds 2500L ""
             )
-
-
-            testCase "Does not run the loaders in a transaction if using runBatchLoader"
-            <| fun () ->
-                let getChild _ _ =
-                    async {
-                        Expect.isNull Transaction.Current ""
-                        return [ () ]
-                    }
-
-                let load =
-                    createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> batchLoadChild getChild (fun () -> 0)
-                    |> batchLoadOptChild getChild (fun () -> 0)
-                    |> batchLoadChildren getChild (fun () -> 0)
-                    |> loadBatchParallelWithoutTransaction
-
-                load () [ () ] |> Async.RunSynchronously |> ignore
-
-
-            testCase "Runs the loaders in a transaction if using loadBatchSerialWithTransaction"
-            <| fun () ->
-                let getChild _ _ =
-                    async {
-                        Expect.isNotNull Transaction.Current ""
-                        return [ () ]
-                    }
-
-                let load =
-                    createBatchLoader (fun _ _ _ _ -> ()) (fun () -> 0)
-                    |> batchLoadChild getChild (fun () -> 0)
-                    |> batchLoadOptChild getChild (fun () -> 0)
-                    |> batchLoadChildren getChild (fun () -> 0)
-                    |> loadBatchSerialWithTransaction
-
-                load () (async.Return [ () ]) |> Async.RunSynchronously |> ignore<unit list>
 
 
         ]

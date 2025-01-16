@@ -138,38 +138,70 @@ module DbScripts =
     // Mock types/functions
     type SqlConnection = SqlConnection of _connStr: string
 
-    type SqlTransaction = IDisposable
+    type SqlTransaction = {
+        Dummy: unit
+    } with
 
-    let createTransaction (_conn: SqlConnection) =
-        { new IDisposable with
-            member _.Dispose() = ()
-        }
+        interface IDisposable with
+            member this.Dispose() = ()
+
+    let createTransaction (_conn: SqlConnection) = { Dummy = () }
 
     let commit (_tran: SqlTransaction) = ()
 
 
 
-    let getAllOrders (_connStr: string) : Async<Dtos.OrderDto list> = failwith ""
+    let getAllOrders (_conn: SqlConnection, _tran: SqlTransaction) : Async<Dtos.OrderDto list> = failwith ""
 
-    let getOrderById (_connStr: string) (_orderId: int) : Async<Dtos.OrderDto option> = failwith ""
-
-    let getOrderLinesForOrder (_connStr: string) (_orderId: int) : Async<Dtos.OrderLineDto list> = failwith ""
-
-    let getOrderLinesForOrders (_connStr: string) (_orderIds: int list) : Async<Dtos.OrderLineDto list> = failwith ""
-
-    let getAssociatedUsersForOrder (_connStr: string) (_orderId: int) : Async<Dtos.OrderAssociatedUserDto list> =
+    let getOrderById (_orderId: int) (_conn: SqlConnection, _tran: SqlTransaction) : Async<Dtos.OrderDto option> =
         failwith ""
 
-    let getAssociatedUsersForOrders (_connStr: string) (_orderIds: int list) : Async<Dtos.OrderAssociatedUserDto list> =
+    let getOrderLinesForOrder
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderId: int)
+        : Async<Dtos.OrderLineDto list> =
         failwith ""
 
-    let getCouponForOrder (_connStr: string) (_orderId: int) : Async<Dtos.OrderCouponDto option> = failwith ""
+    let getOrderLinesForOrders
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderIds: int list)
+        : Async<Dtos.OrderLineDto list> =
+        failwith ""
 
-    let getCouponForOrders (_connStr: string) (_orderIds: int list) : Async<Dtos.OrderCouponDto list> = failwith ""
+    let getAssociatedUsersForOrder
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderId: int)
+        : Async<Dtos.OrderAssociatedUserDto list> =
+        failwith ""
 
-    let getPriceDataForOrder (_connStr: string) (_orderId: int) : Async<Dtos.OrderPriceDataDto> = failwith ""
+    let getAssociatedUsersForOrders
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderIds: int list)
+        : Async<Dtos.OrderAssociatedUserDto list> =
+        failwith ""
 
-    let getPriceDataForOrders (_connStr: string) (_orderIds: int list) : Async<Dtos.OrderPriceDataDto list> =
+    let getCouponForOrder
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderId: int)
+        : Async<Dtos.OrderCouponDto option> =
+        failwith ""
+
+    let getCouponForOrders
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderIds: int list)
+        : Async<Dtos.OrderCouponDto list> =
+        failwith ""
+
+    let getPriceDataForOrder
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderId: int)
+        : Async<Dtos.OrderPriceDataDto> =
+        failwith ""
+
+    let getPriceDataForOrders
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_orderIds: int list)
+        : Async<Dtos.OrderPriceDataDto list> =
         failwith ""
 
     let insertOrder (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderDto) : Async<unit> = async.Return()
@@ -263,40 +295,40 @@ module Db =
     module Order =
 
 
-        let private loadWithoutTransaction =
+        let private loadParallel =
             createLoader orderFromDbDto (fun x -> x.OrderId)
             |> loadChild getOrderLinesForOrder
             |> loadChild getAssociatedUsersForOrder
             |> loadChild getCouponForOrder
             |> loadChild getPriceDataForOrder
-            |> loadParallelWithoutTransaction
+            |> loadParallel
 
 
-        let private loadBatchWithoutTransaction =
+        let private loadBatchParallel =
             createBatchLoader orderFromDbDto (fun x -> x.OrderId)
             |> batchLoadChildren getOrderLinesForOrders (fun x -> x.OrderId)
             |> batchLoadChildren getAssociatedUsersForOrders (fun x -> x.OrderId)
             |> batchLoadOptChild getCouponForOrders (fun x -> x.OrderId)
             |> batchLoadChild getPriceDataForOrders (fun x -> x.OrderId)
-            |> loadBatchParallelWithoutTransaction
+            |> loadBatchParallel
 
 
-        let private loadWithTransaction =
+        let private loadSerial =
             createLoader orderFromDbDto (fun x -> x.OrderId)
             |> loadChild getOrderLinesForOrder
             |> loadChild getAssociatedUsersForOrder
             |> loadChild getCouponForOrder
             |> loadChild getPriceDataForOrder
-            |> loadSerialWithTransaction
+            |> loadSerial
 
 
-        let private loadBatchWithTransaction =
+        let private loadBatchSerial =
             createBatchLoader orderFromDbDto (fun x -> x.OrderId)
             |> batchLoadChildren getOrderLinesForOrders (fun x -> x.OrderId)
             |> batchLoadChildren getAssociatedUsersForOrders (fun x -> x.OrderId)
             |> batchLoadOptChild getCouponForOrders (fun x -> x.OrderId)
             |> batchLoadChild getPriceDataForOrders (fun x -> x.OrderId)
-            |> loadBatchSerialWithTransaction
+            |> loadBatchSerial
 
 
         let private save =
@@ -348,26 +380,17 @@ module Db =
             }
 
 
-        let byIdWithoutTransaction connStr (OrderId oid) =
-            async {
-                match! getOrderById connStr oid with
-                | None -> return None
-                | Some orderDto ->
-                    let! order = loadWithoutTransaction connStr orderDto
-                    return Some order
-            }
+        let byIdParallel (conn, tran) (OrderId oid) =
+            getOrderById oid |> loadParallel (conn, tran)
 
 
-        let byIdWithTransaction connStr (OrderId oid) : Async<Order option> =
-            getOrderById connStr oid |> loadWithTransaction connStr
+        let byIdSerial (conn, tran) (OrderId oid) =
+            getOrderById oid |> loadSerial (conn, tran)
 
 
-        let allWithoutTransaction connStr =
-            async {
-                let! orderDtos = getAllOrders connStr
-                return! loadBatchWithoutTransaction connStr orderDtos
-            }
+        let allParallel (conn, tran) : Async<Order list> =
+            getAllOrders |> loadBatchParallel (conn, tran)
 
 
-        let allWithTransaction connStr : Async<Order list> =
-            getAllOrders connStr |> loadBatchWithTransaction connStr
+        let allSerial (conn, tran) : Async<Order list> =
+            getAllOrders |> loadBatchSerial (conn, tran)
