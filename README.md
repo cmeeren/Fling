@@ -152,7 +152,7 @@ let orderFromDtos
     failwith "Your code here"
 ```
 
-### 4. Write the individual get/insert/update/delete DB functions for each table
+### 5. Write the individual get/insert/update/delete DB functions for each table
 
 [Facil](https://github.com/cmeeren/Facil) can generate these for you if you use SQL Server. If you use Facil, it is
 highly recommended you also install Fling.Interop.Facil and
@@ -247,7 +247,7 @@ let updatePriceData conn (dto: OrderPriceDataDto) : Async<unit> =
     failwith "Your code here"
 ```
 
-### 5. Wire everything together with Fling
+### 6. Wire everything together with Fling
 
 Fling now allows you to wire everything together using a declarative syntax.
 
@@ -326,7 +326,7 @@ If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. 
 of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was
 inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
-### 6. Call the helpers and profit
+### 7. Call the helpers and profit
 
 For example:
 
