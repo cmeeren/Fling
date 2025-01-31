@@ -321,6 +321,302 @@ module Fling =
         saveChildWithoutUpdateWithDifferentOldNew toDto toDto insert existingSave
 
 
+    /// Contains similar functions to those outside this module, but for saving a batch of root entities.
+    [<RequireQualifiedAccess>]
+    module Batch =
+
+
+        let saveRootWithOutput
+            (toDto: 'rootEntity -> 'rootDto)
+            (batchInsert: 'arg -> 'rootDto seq -> Async<'insertResult>)
+            (batchUpdate: 'arg -> 'rootDto seq -> Async<'updateResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'insertResult option * 'updateResult option> =
+            fun (arg: 'arg) (roots: #seq<'rootEntity option * 'rootEntity>) ->
+                async {
+                    let toInsert = ResizeArray()
+                    let toUpdate = ResizeArray()
+
+                    for oldRoot, newRoot in roots do
+                        let newDto = toDto newRoot
+
+                        match oldRoot |> Option.map toDto with
+                        | None -> toInsert.Add newDto
+                        | Some oldDto when oldDto = newDto -> ()
+                        | Some _ -> toUpdate.Add newDto
+
+                    let mutable insertResult = None
+                    let mutable updateResult = None
+
+                    if toUpdate.Count > 0 then
+                        let! res = batchUpdate arg toUpdate
+                        updateResult <- Some res
+
+                    if toInsert.Count > 0 then
+                        let! res = batchInsert arg toInsert
+                        insertResult <- Some res
+
+                    return insertResult, updateResult
+                }
+
+        let saveRoot
+            (toDto: 'rootEntity -> 'rootDto)
+            (batchInsert: 'arg -> 'rootDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'rootDto seq -> Async<unit>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<unit> =
+            fun arg roots ->
+                saveRootWithOutput toDto batchInsert batchUpdate arg roots
+                |> Async.Ignore<unit option * unit option>
+
+
+        let saveChildWithDifferentOldNew
+            (oldToDto: 'rootEntity -> 'childDto)
+            (newToDto: 'rootEntity -> 'childDto)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            fun (arg: 'arg) (roots: #seq<'rootEntity option * 'rootEntity>) ->
+                async {
+                    let! result = existingSave arg roots
+
+                    let toInsert = ResizeArray()
+                    let toUpdate = ResizeArray()
+
+                    for oldRoot, newRoot in roots do
+                        let newChildDto = newToDto newRoot
+
+                        match oldRoot |> Option.map oldToDto with
+                        | None -> toInsert.Add newChildDto
+                        | Some oldChildDto when oldChildDto = newChildDto -> ()
+                        | Some _ -> toUpdate.Add newChildDto
+
+                    if toUpdate.Count > 0 then
+                        do! batchUpdate arg toUpdate
+
+                    if toInsert.Count > 0 then
+                        do! batchInsert arg toInsert
+
+                    return result
+                }
+
+
+        let saveChild
+            (toDto: 'rootEntity -> 'childDto)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildWithDifferentOldNew toDto toDto batchInsert batchUpdate existingSave
+
+
+        let saveChildWithoutUpdateWithDifferentOldNew
+            (oldToDto: 'rootEntity -> 'childDto)
+            (newToDto: 'rootEntity -> 'childDto)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildWithDifferentOldNew
+                oldToDto
+                newToDto
+                batchInsert
+                (fun _ dtos ->
+                    let dto = Seq.head dtos
+
+                    failwith
+                        $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName}. Updated child DTO: %A{dto}"
+                )
+                existingSave
+
+
+        let saveChildWithoutUpdate
+            (toDto: 'rootEntity -> 'childDto)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildWithoutUpdateWithDifferentOldNew toDto toDto batchInsert existingSave
+
+
+        let saveOptChildWithDifferentOldNew
+            (oldToDto: 'rootEntity -> 'childDto option)
+            (newToDto: 'rootEntity -> 'childDto option)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            fun (arg: 'arg) (roots: #seq<'rootEntity option * 'rootEntity>) ->
+                async {
+                    let! result = existingSave arg roots
+
+                    let toInsert = ResizeArray()
+                    let toUpdate = ResizeArray()
+                    let toDelete = ResizeArray()
+
+                    for oldRoot, newRoot in roots do
+                        match oldRoot |> Option.bind oldToDto, newToDto newRoot with
+                        | None, None -> ()
+                        | None, Some newChildDto -> toInsert.Add newChildDto
+                        | Some oldChildDto, Some newChildDto when oldChildDto = newChildDto -> ()
+                        | Some _, Some newChildDto -> toUpdate.Add newChildDto
+                        | Some oldChildDto, None -> toDelete.Add(getId oldChildDto)
+
+                    if toDelete.Count > 0 then
+                        do! batchDelete arg toDelete
+
+                    if toUpdate.Count > 0 then
+                        do! batchUpdate arg toUpdate
+
+                    if toInsert.Count > 0 then
+                        do! batchInsert arg toInsert
+
+                    return result
+                }
+
+
+        let saveOptChild
+            (toDto: 'rootEntity -> 'childDto option)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveOptChildWithDifferentOldNew toDto toDto getId batchInsert batchUpdate batchDelete existingSave
+
+
+        let saveOptChildWithoutUpdateWithDifferentOldNew
+            (oldToDto: 'rootEntity -> 'childDto option)
+            (newToDto: 'rootEntity -> 'childDto option)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveOptChildWithDifferentOldNew
+                oldToDto
+                newToDto
+                getId
+                batchInsert
+                (fun _ dtos ->
+                    let dto = Seq.head dtos
+
+                    failwith
+                        $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+                )
+                batchDelete
+                existingSave
+
+
+        let saveOptChildWithoutUpdate
+            (toDto: 'rootEntity -> 'childDto option)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveOptChildWithoutUpdateWithDifferentOldNew toDto toDto getId batchInsert batchDelete existingSave
+
+
+        let saveChildrenWithDifferentOldNew
+            (oldToDto: 'rootEntity -> #seq<'childDto>)
+            (newToDto: 'rootEntity -> #seq<'childDto>)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            fun (arg: 'arg) (roots: #seq<'rootEntity option * 'rootEntity>) ->
+                async {
+                    let! result = existingSave arg roots
+
+                    let oldChildren = roots |> Seq.choose (fst >> Option.map oldToDto) |> Seq.collect id
+                    let newChildren = roots |> Seq.map (snd >> newToDto) |> Seq.collect id
+
+                    let oldChildrenById = Dictionary<'childDtoId, 'childDto>()
+                    let newChildrenById = Dictionary<'childDtoId, 'childDto>()
+
+                    for dto in oldChildren do
+                        oldChildrenById[getId dto] <- dto
+
+                    for dto in newChildren do
+                        newChildrenById[getId dto] <- dto
+
+                    let toInsert = ResizeArray()
+                    let toUpdate = ResizeArray()
+                    let toDelete = ResizeArray()
+
+                    for oldChild in oldChildren do
+                        let oldChildId = getId oldChild
+
+                        if not (newChildrenById.ContainsKey oldChildId) then
+                            toDelete.Add oldChildId
+
+                    for newChild in newChildren do
+                        match oldChildrenById.TryGetValue(getId newChild) with
+                        | false, _ -> toInsert.Add newChild
+                        | true, oldChild when newChild <> oldChild -> toUpdate.Add newChild
+                        | true, _ -> ()
+
+                    if toDelete.Count > 0 then
+                        do! batchDelete arg toDelete
+
+                    if toUpdate.Count > 0 then
+                        do! batchUpdate arg toUpdate
+
+                    if toInsert.Count > 0 then
+                        do! batchInsert arg toInsert
+
+                    return result
+                }
+
+
+        let saveChildren
+            (toDto: 'rootEntity -> #seq<'childDto>)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchUpdate: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildrenWithDifferentOldNew toDto toDto getId batchInsert batchUpdate batchDelete existingSave
+
+
+        let saveChildrenWithoutUpdateWithDifferentOldNew
+            (oldToDto: 'rootEntity -> #seq<'childDto>)
+            (newToDto: 'rootEntity -> #seq<'childDto>)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildrenWithDifferentOldNew
+                oldToDto
+                newToDto
+                getId
+                batchInsert
+                (fun _ dtos ->
+                    let dto = Seq.head dtos
+
+                    failwith
+                        $"Update needed in Fling ...WithoutUpdate function due to changed child DTO of type %s{typeof<'childDto>.FullName} with ID %A{getId dto}. Updated child DTO: %A{dto}"
+                )
+                batchDelete
+                existingSave
+
+
+        let saveChildrenWithoutUpdate
+            (toDto: 'rootEntity -> #seq<'childDto>)
+            (getId: 'childDto -> 'childDtoId)
+            (batchInsert: 'arg -> 'childDto seq -> Async<unit>)
+            (batchDelete: 'arg -> 'childDtoId seq -> Async<unit>)
+            (existingSave: 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult>)
+            : 'arg -> #seq<'rootEntity option * 'rootEntity> -> Async<'saveResult> =
+            saveChildrenWithoutUpdateWithDifferentOldNew toDto toDto getId batchInsert batchDelete existingSave
+
+
+
     type Loader<'rootDto, 'rootDtoId, 'loadResult, 'arg when 'rootDtoId: equality> = {
         GetId: 'rootDto -> 'rootDtoId
         Load: bool -> 'arg -> 'rootDto -> Async<'loadResult>

@@ -1,5 +1,10 @@
 Release notes (Fling.Interop.Facil)
 
+### Unreleased
+
+* Added support for batch saving (saving a batch of root entities with all child entities and doing at most one
+  insert/update/delete call per table).
+
 ### 0.3.0 (2025-01-16)
 
 See the v0.7.0 notes in [RELEASE_NOTES.md](RELEASE_NOTES.md) for more background on the changes in this version.

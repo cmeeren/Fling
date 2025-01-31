@@ -92,6 +92,26 @@ module FacilMock =
             ignore (^a: (member Data: string) dto)
             Root_Insert_Executable()
 
+
+    type Root_InsertBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : Root_InsertBatch_args =
+            [|
+                (^a: (member ``Id``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> Root_InsertBatch_args
+
+
+    type Root_InsertBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type Root_InsertBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = Root_InsertBatch()
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = Root_InsertBatch()
+        member _.WithParameters(_args: seq<Root_InsertBatch_args>) = Root_InsertBatch_Executable()
+
     type Root_Update_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -105,6 +125,27 @@ module FacilMock =
             ignore (^a: (member Id: int) dto)
             ignore (^a: (member Data: string) dto)
             Root_Update_Executable()
+
+
+
+    type Root_UpdateBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : Root_UpdateBatch_args =
+            [|
+                (^a: (member ``Id``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> Root_UpdateBatch_args
+
+
+    type Root_UpdateBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type Root_UpdateBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) = Root_UpdateBatch()
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = Root_UpdateBatch()
+        member _.WithParameters(_args: seq<Root_UpdateBatch_args>) = Root_UpdateBatch_Executable()
 
 
     type ChildToOne_Insert_Executable() =
@@ -122,6 +163,29 @@ module FacilMock =
             ChildToOne_Insert_Executable()
 
 
+    type ChildToOne_InsertBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToOne_InsertBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToOne_InsertBatch_args
+
+
+    type ChildToOne_InsertBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToOne_InsertBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToOne_InsertBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_InsertBatch()
+        member _.WithParameters(_args: seq<ChildToOne_InsertBatch_args>) = ChildToOne_InsertBatch_Executable()
+
+
     type ChildToOne_Update_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -135,6 +199,29 @@ module FacilMock =
             ignore (^a: (member RootId: int) dto)
             ignore (^a: (member Data: string) dto)
             ChildToOne_Update_Executable()
+
+
+    type ChildToOne_UpdateBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToOne_UpdateBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToOne_UpdateBatch_args
+
+
+    type ChildToOne_UpdateBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToOne_UpdateBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToOne_UpdateBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOne_UpdateBatch()
+        member _.WithParameters(_args: seq<ChildToOne_UpdateBatch_args>) = ChildToOne_UpdateBatch_Executable()
 
 
     type ChildToOne_GetByRootId_Executable() =
@@ -188,6 +275,29 @@ module FacilMock =
             ChildToOneOpt_Insert_Executable()
 
 
+    type ChildToOneOpt_InsertBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToOneOpt_InsertBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToOneOpt_InsertBatch_args
+
+
+    type ChildToOneOpt_InsertBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToOneOpt_InsertBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToOneOpt_InsertBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_InsertBatch()
+        member _.WithParameters(_args: seq<ChildToOneOpt_InsertBatch_args>) = ChildToOneOpt_InsertBatch_Executable()
+
+
     type ChildToOneOpt_Update_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -203,6 +313,29 @@ module FacilMock =
             ChildToOneOpt_Update_Executable()
 
 
+    type ChildToOneOpt_UpdateBatch_args(_fields: obj[]) =
+
+        static member inline create(dto: ^a) : ChildToOneOpt_UpdateBatch_args =
+            [|
+                (^a: (member ``RootId``: int) dto) |> box
+                (^a: (member ``Data``: string) dto) |> box
+            |]
+            |> ChildToOneOpt_UpdateBatch_args
+
+
+    type ChildToOneOpt_UpdateBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToOneOpt_UpdateBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToOneOpt_UpdateBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_UpdateBatch()
+        member _.WithParameters(_args: seq<ChildToOneOpt_UpdateBatch_args>) = ChildToOneOpt_UpdateBatch_Executable()
+
+
     type ChildToOneOpt_Delete_Executable() =
         member _.AsyncExecute() = async.Return 1
 
@@ -215,6 +348,28 @@ module FacilMock =
         member inline _.WithParameters(dto: ^a) =
             ignore (^a: (member RootId: int) dto)
             ChildToOneOpt_Delete_Executable()
+
+
+    type ChildToOneOpt_DeleteBatch_args(_fields: obj[]) =
+
+        static member create(id: int) : ChildToOneOpt_DeleteBatch_args =
+            [| id |> box |] |> ChildToOneOpt_DeleteBatch_args
+
+        static member inline create(dto: ^a) : ChildToOneOpt_DeleteBatch_args =
+            [| (^a: (member ``Id``: int) dto) |> box |] |> ChildToOneOpt_DeleteBatch_args
+
+
+    type ChildToOneOpt_DeleteBatch_Executable() =
+        member _.AsyncExecute() = async.Return 1
+
+    type ChildToOneOpt_DeleteBatch() =
+        member this.ConfigureCommand(_configureCommand: SqlCommand -> unit) = this
+
+        static member WithConnection(_connStr: string, ?_configureConn: SqlConnection -> unit) =
+            ChildToOneOpt_DeleteBatch()
+
+        static member WithConnection(_conn: SqlConnection, ?_tran: SqlTransaction) = ChildToOneOpt_DeleteBatch()
+        member _.WithParameters(_args: seq<ChildToOneOpt_DeleteBatch_args>) = ChildToOneOpt_DeleteBatch_Executable()
 
 
     type ChildToOneOpt_GetByRootId_Executable() =
@@ -459,6 +614,67 @@ module UsageCompileTimeTests =
             ChildToMany_UpdateBatch
             ChildToMany_DeleteBatch
         |> saveWithTransactionFromConnStr
+
+
+    let saveBatchedRoot: string -> (Root option * Root) seq -> Async<unit> =
+        Batch.saveRoot rootToDto Root_InsertBatch Root_UpdateBatch
+        |> Batch.saveChild rootToToOneDto ChildToOne_InsertBatch ChildToOne_UpdateBatch
+        |> Batch.saveChildWithDifferentOldNew
+            rootToToOneDto
+            rootToToOneDto
+            ChildToOne_InsertBatch
+            ChildToOne_UpdateBatch
+        |> Batch.saveChildWithoutUpdate rootToToOneDto ChildToOne_InsertBatch
+        |> Batch.saveChildWithoutUpdateWithDifferentOldNew rootToToOneDto rootToToOneDto ChildToOne_InsertBatch
+        |> Batch.saveOptChild
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_InsertBatch
+            ChildToOneOpt_UpdateBatch
+            ChildToOneOpt_DeleteBatch
+        |> Batch.saveOptChildWithDifferentOldNew
+            rootToToOneOptDto
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_InsertBatch
+            ChildToOneOpt_UpdateBatch
+            ChildToOneOpt_DeleteBatch
+        |> Batch.saveOptChildWithoutUpdate
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_InsertBatch
+            ChildToOneOpt_DeleteBatch
+        |> Batch.saveOptChildWithoutUpdateWithDifferentOldNew
+            rootToToOneOptDto
+            rootToToOneOptDto
+            (fun dto -> dto.RootId)
+            ChildToOneOpt_InsertBatch
+            ChildToOneOpt_DeleteBatch
+        |> Batch.saveChildren
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_UpdateBatch
+            ChildToMany_DeleteBatch
+        |> Batch.saveChildrenWithDifferentOldNew
+            rootToToManyDtos
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_UpdateBatch
+            ChildToMany_DeleteBatch
+        |> Batch.saveChildrenWithoutUpdate
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_DeleteBatch
+        |> Batch.saveChildrenWithoutUpdateWithDifferentOldNew
+            rootToToManyDtos
+            rootToToManyDtos
+            (fun dto -> dto.Id)
+            ChildToMany_InsertBatch
+            ChildToMany_DeleteBatch
+        |> Batch.saveWithTransactionFromConnStr
 
 
     let saveWithOutput: string -> Root option -> Root -> Async<int option> =

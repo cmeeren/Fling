@@ -206,7 +206,13 @@ module DbScripts =
 
     let insertOrder (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderDto) : Async<unit> = async.Return()
 
+    let insertOrders (_conn: SqlConnection, _tran: SqlTransaction) (_dtos: Dtos.OrderDto seq) : Async<unit> =
+        async.Return()
+
     let updateOrder (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderDto) : Async<unit> = async.Return()
+
+    let updateOrders (_conn: SqlConnection, _tran: SqlTransaction) (_dtos: Dtos.OrderDto seq) : Async<unit> =
+        async.Return()
 
     let insertOrderLine (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderLineDto) : Async<unit> =
         async.Return()
@@ -270,15 +276,35 @@ module DbScripts =
             ignore (^a: (member Expiration: DateTimeOffset) dto)
         }
 
+    let insertCoupons (_conn: SqlConnection, _tran: SqlTransaction) (_dtos: Dtos.OrderCouponDto seq) : Async<unit> =
+        async.Return()
+
     let updateCoupon (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderCouponDto) : Async<unit> =
         async.Return()
 
-    let deleteCoupon (_conn: SqlConnection, _tran: SqlTransaction) (_orderId: int) : Async<unit> = async.Return()
+    let updateCoupons (_conn: SqlConnection, _tran: SqlTransaction) (_dtos: Dtos.OrderCouponDto seq) : Async<unit> =
+        async.Return()
+
+    let deleteCoupon (_conn: SqlConnection, _tran: SqlTransaction) (_couponId: int) : Async<unit> = async.Return()
+
+    let deleteCoupons (_conn: SqlConnection, _tran: SqlTransaction) (_couponIds: int seq) : Async<unit> = async.Return()
 
     let insertPriceData (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderPriceDataDto) : Async<unit> =
         async.Return()
 
+    let insertPriceDatas
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_dtos: Dtos.OrderPriceDataDto seq)
+        : Async<unit> =
+        async.Return()
+
     let updatePriceData (_conn: SqlConnection, _tran: SqlTransaction) (_dto: Dtos.OrderPriceDataDto) : Async<unit> =
+        async.Return()
+
+    let updatePriceDatas
+        (_conn: SqlConnection, _tran: SqlTransaction)
+        (_dtos: Dtos.OrderPriceDataDto seq)
+        : Async<unit> =
         async.Return()
 
 
@@ -362,6 +388,24 @@ module Db =
             |> saveChild orderToPriceDataDto insertPriceData updatePriceData
 
 
+        let private saveBatchedRoot =
+            Batch.saveRoot orderToDbDto insertOrders updateOrders
+            |> Batch.saveChildren
+                orderToLineDtos
+                (fun dto -> dto.OrderLineId)
+                insertOrderLines
+                updateOrderLines
+                deleteOrderLines
+            |> Batch.saveChildren
+                orderToAssociatedUserDtos
+                (fun dto -> dto.OrderId, dto.UserId)
+                insertOrderAssociatedUsers
+                updateOrderAssociatedUsers
+                deleteOrderAssociatedUsers
+            |> Batch.saveOptChild orderToCouponDto (fun dto -> dto.OrderId) insertCoupons updateCoupons deleteCoupons
+            |> Batch.saveChild orderToPriceDataDto insertPriceDatas updatePriceDatas
+
+
         let saveChanges connStr (oldOrder: Order option) (newOrder: Order) =
             async {
                 let conn = SqlConnection connStr
@@ -376,6 +420,15 @@ module Db =
                 let conn = SqlConnection connStr
                 use tran = createTransaction conn
                 do! saveBatched (conn, tran) oldOrder newOrder
+                commit tran
+            }
+
+
+        let Root connStr (orders: (Order option * Order) seq) =
+            async {
+                let conn = SqlConnection connStr
+                use tran = createTransaction conn
+                do! saveBatchedRoot (conn, tran) orders
                 commit tran
             }
 

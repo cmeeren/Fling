@@ -5,6 +5,11 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
+### Unreleased
+
+* Added support for batch saving (saving a batch of root entities with all child entities and doing at most one
+  insert/update/delete call per table).
+
 ### 0.7.0 (2025-01-16)
 
 Parts of the API have been redesigned with several breaking changes. This was necessary because the transaction

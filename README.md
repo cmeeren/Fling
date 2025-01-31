@@ -24,7 +24,7 @@ three helpers for efficiently saving/loading complex domain entities as describe
 ```f#
 open Fling.Fling
 
-// 'Order option' is the old order (None for initial insert)
+// Saves an order. 'Order option' is the old order (None for initial insert)
 let save: 'arg -> Order option -> Order -> Async<'saveResult option> =
     saveRoot orderToDbDto insertOrder updateOrder
     |> saveChildren
@@ -36,6 +36,20 @@ let save: 'arg -> Order option -> Order -> Async<'saveResult option> =
     |> saveOptChild orderToCouponDto _.OrderId Db.insertCoupon Db.updateCoupon Db.deleteCoupon
     |> saveChild Db.orderToPriceDataDto Db.insertPriceData Db.updatePriceData
 
+// Saves a sequence of orders in a single batch (at most one call to each insert/update/delete function).
+// 'Order option' is the old order (None for initial insert).
+let saveBatch: 'arg -> #seq<Order option * Order> -> Async<unit option> =
+    Batch.saveRoot orderToDbDto insertOrders updateOrders
+    |> Batch.saveChildren
+        orderToLineDtos
+        _.OrderLineId
+        Db.insertOrderLines
+        Db.updateOrderLines
+        Db.deleteOrderLines
+    |> Batch.saveOptChild orderToCouponDto _.OrderId Db.insertCoupons Db.updateCoupons Db.deleteCoupons
+    |> Batch.saveChild Db.orderToPriceDataDto Db.insertPriceDatas Db.updatePriceDatas
+
+// Loads a single order.
 let load: 'arg -> ('arg -> Async<OrderDto option>) -> Async<Order option> =
     createLoader Dto.orderToDomain _.OrderId
     |> loadChild Db.getOrderLinesForOrder
@@ -43,6 +57,7 @@ let load: 'arg -> ('arg -> Async<OrderDto option>) -> Async<Order option> =
     |> loadChild Db.getPriceDataForOrder
     |> loadSerial
 
+// Loads a batch of orders (at most one fetch per Db function).
 let loadBatch: 'arg -> ('arg -> Async<OrderDto list>) -> Async<Order list> =
     createBatchLoader Dto.orderToDomain _.OrderId
     |> batchLoadChildren Db.getOrderLinesForOrders _.OrderId
@@ -326,6 +341,30 @@ If you need to return a result, use `saveRootWithOutput` instead of `saveRoot`. 
 of `Async<unit>`, where `'a` is the return type of your insert and update functions. If the root entity was
 inserted/updated, the function returns `Some` with the result of the insert/update; otherwise it returns `None`.
 
+#### Helper to save a batch of root entities and all child entities
+
+This works the same as the non-batched version above, but inserts/updates/deletes are run in a batch against each table.
+In other words, at most one call is made per insert/update/delete per child type.
+
+The batched `saveRootWithOutput` returns `Async<'insertResult option * 'updateResult option>`. If root entities were
+inserted and/or updated, the respective value will be `Some`; otherwise it will be `None`.
+
+```f#
+open Fling.Fling
+
+let save: 'arg -> #seq<Order option * Order> -> Async<unit> =
+    Batch.saveRoot orderToDbDto insertOrder updateOrder
+    |> Batch.saveChildren orderToLineDtos _OrderLineId insertOrderLines updateOrderLines deleteOrderLines
+    |> Batch.saveChildren
+        orderToAssociatedUserDtos
+        (fun dto -> dto.OrderId, dto.UserId)
+        insertOrderAssociatedUsers
+        updateOrderAssociatedUsers
+        deleteOrderAssociatedUsers
+    |> Batch.saveOptChild orderToCouponDto _.OrderId insertCoupons updateCoupons deleteCoupons
+    |> Batch.saveChild orderToPriceDataDto insertPriceDatas updatePriceDatas
+```
+
 ### 7. Call the helpers and profit
 
 For example:
@@ -438,7 +477,7 @@ let allOrders (OrderId orderId) =
     loadManyNoParam loadBatch Order_GetAll
 ```
 
-For saving:
+For non-batch saving:
 
 * `'arg` is locked to `SqlConnection * SqlTransaction`
 
@@ -466,9 +505,37 @@ let save: (SqlConnection * SqlTransaction) -> Order option -> Order -> Async<uni
     |> saveChild orderToPriceDataDto OrderPriceData_Insert OrderPriceData_Update
 ```
 
-Use `saveWithTransactionFromConnStr` to “convert” the `SqlConnection * SqlTransaction` to a `string` (connection string)
-and run the whole save in a transaction. This is useful if you don’t need to run the save in a transaction with anything
-else:
+For batch saving:
+
+* `'arg` is locked to `SqlConnection * SqlTransaction`
+
+```f#
+let save: (SqlConnection * SqlTransaction) -> #seq<Order option * Order> -> Async<unit> =
+    saveRoot orderToDbDto Order_InsertBatch Order_UpdateBatch
+    |> Batch.saveChildren
+        orderToLineDtos
+        DbGen.TableDtos.OrderLine.getPrimaryKey
+        OrderLine_InsertBatch
+        OrderLine_UpdateBatch
+        OrderLine_DeleteBatch
+    |> Batch.saveChildren
+        orderToAssociatedUserDtos
+        DbGen.TableDtos.OrderAssociatedUser.getPrimaryKey
+        OrderAssociatedUser_InsertBatch
+        OrderAssociatedUser_UpdateBatch
+        OrderAssociatedUser_DeleteBatch
+    |> Batch.saveOptChild
+        orderToCouponDto
+        DbGen.TableDtos.OrderCoupon.getPrimaryKey
+        OrderCoupon_InsertBatch
+        OrderCoupon_UpdateBatch
+        OrderCoupon_DeleteBatch
+    |> Batch.saveChild orderToPriceDataDto OrderPriceData_InsertBatch OrderPriceData_UpdateBatch
+```
+
+Use `saveWithTransactionFromConnStr` or `Batch.saveWithTransactionFromConnStr` to “convert” the
+`SqlConnection * SqlTransaction` to a `string` (connection string) and run the whole save in a transaction. This is
+useful if you don’t need to run the save in a transaction with anything else:
 
 ```f#
 let save : string -> Order option -> Order -> Async<unit> =
@@ -476,8 +543,14 @@ let save : string -> Order option -> Order -> Async<unit> =
     |> saveWithTransactionFromConnStr
 ```
 
+```f#
+let save : string -> #seq<Order option * Order> -> Async<unit> =
+    (* same code as above *)
+    |> Batch.saveWithTransactionFromConnStr
+```
+
 As with Fling, use `saveRootWithOutput` instead of `saveRoot` if you need to return anything from the root’s
-insert/update script.
+insert/update script
 
 Limitations
 -----------

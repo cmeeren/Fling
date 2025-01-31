@@ -1,5 +1,6 @@
 module Tests
 
+
 open System.Diagnostics
 open Expecto
 open Hedgehog
@@ -1122,6 +1123,283 @@ let tests =
                                 | Some _ -> ()
                         ]
                         "insertToMany"
+                }
+
+
+        ]
+
+
+        testList "saveBatch" [
+
+
+            testCase "Returns correct result and calls DB functions in sequence with correct args"
+            <| fun () ->
+                Property.checkWith (PropertyConfig.defaultConfig |> PropertyConfig.withTests 1000<tests>)
+                <| property {
+
+                    let! arg = GenX.auto<char>
+
+                    let! rootDto1, toOneDto1, toOneOptDto1, toManyDtos1 = Gen.rootDtoWithChildDtos
+
+                    let! rootDto2,
+                         toOneDto2,
+                         toOneOptDto2,
+                         toManyDtos2,
+                         rootDto2',
+                         toOneDto2',
+                         toOneOptDto2',
+                         toManyDtos2' =
+                        Gen.rootDtoWithChildDtosWithUpdates
+                        |> Gen.filter (fun (r2, _, _, tm2, _, _, _, tm2') ->
+                            r2.Id <> rootDto1.Id
+                            && Set.isEmpty (
+                                Set.intersect
+                                    (toManyDtos1 |> List.map _.Id |> set)
+                                    (Set.union (tm2 |> List.map _.Id |> set) (tm2' |> List.map _.Id |> set))
+                            )
+                        )
+
+                    let mutable i = 1
+
+                    let mutable batchInsertRootCalledWith = []
+
+                    let batchInsertRoot arg dtos =
+                        async {
+                            batchInsertRootCalledWith <- batchInsertRootCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchUpdateRootCalledWith = []
+
+                    let batchUpdateRoot arg dtos =
+                        async {
+                            batchUpdateRootCalledWith <- batchUpdateRootCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchInsertToOneCalledWith = []
+
+                    let batchInsertToOne arg dtos =
+                        async {
+                            batchInsertToOneCalledWith <- batchInsertToOneCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchUpdateToOneCalledWith = []
+
+                    let batchUpdateToOne arg dtos =
+                        async {
+                            batchUpdateToOneCalledWith <- batchUpdateToOneCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchInsertToOneOptCalledWith = []
+
+                    let batchInsertToOneOpt arg dtos =
+                        async {
+                            batchInsertToOneOptCalledWith <- batchInsertToOneOptCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchUpdateToOneOptCalledWith = []
+
+                    let batchUpdateToOneOpt arg dtos =
+                        async {
+                            batchUpdateToOneOptCalledWith <- batchUpdateToOneOptCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchDeleteToOneOptCalledWith = []
+
+                    let batchDeleteToOneOpt arg dtos =
+                        async {
+                            batchDeleteToOneOptCalledWith <- batchDeleteToOneOptCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchInsertToManyCalledWith = []
+
+                    let batchInsertToMany arg dtos =
+                        async {
+                            batchInsertToManyCalledWith <- batchInsertToManyCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchUpdateToManyCalledWith = []
+
+                    let batchUpdateToMany arg dtos =
+                        async {
+                            batchUpdateToManyCalledWith <- batchUpdateToManyCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+                    let mutable batchDeleteToManyCalledWith = []
+
+                    let batchDeleteToMany arg dtos =
+                        async {
+                            batchDeleteToManyCalledWith <- batchDeleteToManyCalledWith @ [ i, arg, Seq.toList dtos ]
+                            i <- i + 1
+                        }
+
+
+                    let rootToDto =
+                        function
+                        | 1 -> rootDto1
+                        | 2 -> rootDto2
+                        | 3 -> rootDto2'
+                        | _ -> failwith "Invalid arg"
+
+                    let rootToToOneDto =
+                        function
+                        | 1 -> toOneDto1
+                        | 2 -> toOneDto2
+                        | 3 -> toOneDto2'
+                        | _ -> failwith "Invalid arg"
+
+                    let rootToToOneOptDto =
+                        function
+                        | 1 -> toOneOptDto1
+                        | 2 -> toOneOptDto2
+                        | 3 -> toOneOptDto2'
+                        | _ -> failwith "Invalid arg"
+
+                    let rootToToManyDtos =
+                        function
+                        | 1 -> toManyDtos1
+                        | 2 -> toManyDtos2
+                        | 3 -> toManyDtos2'
+                        | _ -> failwith "Invalid arg"
+
+                    let save =
+                        Batch.saveRoot rootToDto batchInsertRoot batchUpdateRoot
+                        |> Batch.saveChild rootToToOneDto batchInsertToOne batchUpdateToOne
+                        |> Batch.saveOptChild
+                            rootToToOneOptDto
+                            _.RootId
+                            batchInsertToOneOpt
+                            batchUpdateToOneOpt
+                            batchDeleteToOneOpt
+                        |> Batch.saveChildren
+                            rootToToManyDtos
+                            _.Id
+                            batchInsertToMany
+                            batchUpdateToMany
+                            batchDeleteToMany
+
+                    save arg [ (None, 1); (Some 2, 3) ] |> Async.RunSynchronously
+
+                    let mutable expectedId = 0
+
+                    let nextExpectedId () =
+                        expectedId <- expectedId + 1
+                        expectedId
+
+                    Expect.sequenceEqual
+                        batchUpdateRootCalledWith
+                        [
+                            if rootDto2 <> rootDto2' then
+                                nextExpectedId (), arg, [ rootDto2' ]
+                        ]
+                        "batchUpdateRoot"
+
+                    Expect.sequenceEqual
+                        batchInsertRootCalledWith
+                        [ nextExpectedId (), arg, [ rootDto1 ] ]
+                        "batchInsertRoot"
+
+                    Expect.sequenceEqual
+                        batchUpdateToOneCalledWith
+                        [
+                            if toOneDto2 <> toOneDto2' then
+                                nextExpectedId (), arg, [ toOneDto2' ]
+                        ]
+                        "batchUpdateToOne"
+
+                    Expect.sequenceEqual
+                        batchInsertToOneCalledWith
+                        [ nextExpectedId (), arg, [ toOneDto1 ] ]
+                        "batchInsertToOne"
+
+                    Expect.sequenceEqual
+                        batchDeleteToOneOptCalledWith
+                        [
+                            if toOneOptDto2.IsSome && toOneOptDto2'.IsNone then
+                                nextExpectedId (), arg, [ toOneOptDto2.Value.RootId ]
+                        ]
+                        "batchDeleteToOneOpt"
+
+                    Expect.sequenceEqual
+                        batchUpdateToOneOptCalledWith
+                        [
+                            if toOneOptDto2.IsSome && toOneOptDto2'.IsSome && toOneOptDto2 <> toOneOptDto2' then
+                                nextExpectedId (), arg, [ toOneOptDto2'.Value ]
+                        ]
+                        "batchUpdateToOneOpt"
+
+                    Expect.sequenceEqual
+                        batchInsertToOneOptCalledWith
+                        [
+                            let dtos = [
+                                if toOneOptDto1.IsSome then
+                                    toOneOptDto1.Value
+
+                                if toOneOptDto2.IsNone && toOneOptDto2'.IsSome then
+                                    toOneOptDto2'.Value
+                            ]
+
+                            if not dtos.IsEmpty then
+                                nextExpectedId (), arg, dtos
+                        ]
+                        "batchInsertToOneOpt"
+
+                    let oldToManyById = toManyDtos2 |> List.map (fun x -> x.Id, x) |> Map.ofList
+
+                    let newToManyById =
+                        toManyDtos1 @ toManyDtos2' |> List.map (fun x -> x.Id, x) |> Map.ofList
+
+                    let deletedIds =
+                        toManyDtos2
+                        |> List.map (fun x -> x.Id)
+                        |> List.filter (not << newToManyById.ContainsKey)
+
+                    Expect.sequenceEqual
+                        batchDeleteToManyCalledWith
+                        [
+                            if not deletedIds.IsEmpty then
+                                nextExpectedId (), arg, deletedIds
+                        ]
+                        "batchDeleteToMany"
+
+                    Expect.sequenceEqual
+                        batchUpdateToManyCalledWith
+                        [
+                            let dtos = [
+                                for newToManyDto in toManyDtos1 @ toManyDtos2' do
+                                    match oldToManyById.TryFind newToManyDto.Id with
+                                    | Some oldToManyDto when oldToManyDto <> newToManyDto -> newToManyDto
+                                    | _ -> ()
+                            ]
+
+                            if not dtos.IsEmpty then
+                                nextExpectedId (), arg, dtos
+                        ]
+                        "batchUpdateToMany"
+
+                    Expect.sequenceEqual
+                        batchInsertToManyCalledWith
+                        [
+
+                            let dtos = [
+                                for newToManyDto in toManyDtos1 @ toManyDtos2' do
+                                    match oldToManyById.TryFind newToManyDto.Id with
+                                    | None -> newToManyDto
+                                    | Some _ -> ()
+                            ]
+
+                            if not dtos.IsEmpty then
+                                nextExpectedId (), arg, dtos
+                        ]
+                        "batchInsertToMany"
                 }
 
 
