@@ -5,6 +5,11 @@ These are the release notes for Fling (the main package).
 See [RELEASE_NOTES_Fling.Interop.Facil.md](RELEASE_NOTES_Fling.Interop.Facil.md) for the release notes for
 Fling.Interop.Facil.
 
+### 0.7.2 (2025-05-20)
+
+* Added `*WithFullDeleteDto` functions where the delete argument function accepts the full DTO, not just the ID. This
+  may be useful e.g. for updating history tables on deletion.
+
 ### 0.7.1 (2025-01-31)
 
 * Added support for batch saving (saving a batch of root entities with all child entities and doing at most one
