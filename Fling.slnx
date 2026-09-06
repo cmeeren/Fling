@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+    <File Path="RELEASE_NOTES.md" />
+    <File Path="RELEASE_NOTES_Fling.Interop.Facil.md" />
+  </Folder>
+  <Folder Name="/Solution Items/.config/">
+    <File Path=".config/dotnet-tools.json" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/" />
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="src/Fling.Interop.Facil.Tests/Fling.Interop.Facil.Tests.fsproj" />
+    <Project Path="src/Fling.Tests/Fling.Tests.fsproj" />
+  </Folder>
+  <Project Path="src/Fling.Interop.Facil/Fling.Interop.Facil.fsproj" />
+  <Project Path="src/Fling/Fling.fsproj" />
+</Solution>
